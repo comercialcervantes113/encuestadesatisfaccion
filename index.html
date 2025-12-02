@@ -42,16 +42,21 @@
         .hidden-view { display: none !important; }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-800 min-h-screen relative overflow-x-hidden selection:bg-cyan-500/30">
+<body class="bg-slate-950 text-slate-800 min-h-screen relative overflow-x-hidden selection:bg-cyan-500/30">
 
-    <!-- Background Layers -->
-    <!-- Capa 1: Imagen de fondo -->
-    <div class="fixed inset-0 z-0 bg-cover bg-center" style="background-image: url('https://i.postimg.cc/6wfDzyN9/image.png')"></div>
-    <!-- Capa 2: Degradado azul -->
-    <div class="fixed inset-0 z-0 bg-gradient-to-br from-blue-950/90 via-blue-900/90 to-blue-800/85 backdrop-blur-[2px]"></div>
-    <!-- Capa 3: Marca de agua (Logo) - Opacidad aumentada al 15% -->
-    <div class="fixed inset-0 z-0 flex items-center justify-center opacity-[0.15] pointer-events-none select-none">
-        <img src="https://i.ibb.co/4nqvFQGM/logo.png" class="w-[120vw] max-w-5xl transform -rotate-12" alt="Watermark">
+    <!-- Background Layers (Mejorados para fusión oscura) -->
+    <!-- Capa 1: Imagen base -->
+    <div class="fixed inset-0 z-0 bg-cover bg-center opacity-60" style="background-image: url('https://i.postimg.cc/6wfDzyN9/image.png')"></div>
+    
+    <!-- Capa 2: Degradado de Fusión (Multiply para oscurecer y tintar) -->
+    <div class="fixed inset-0 z-0 bg-gradient-to-br from-blue-950 via-blue-900 to-slate-900 mix-blend-multiply opacity-90"></div>
+    
+    <!-- Capa 3: Degradado superior para brillo sutil -->
+    <div class="fixed inset-0 z-0 bg-gradient-to-t from-black/80 via-blue-900/20 to-transparent"></div>
+
+    <!-- Capa 4: Marca de agua (Logo) - Más visible y grande -->
+    <div class="fixed inset-0 z-0 flex items-center justify-center opacity-[0.25] pointer-events-none select-none mix-blend-overlay">
+        <img src="https://i.ibb.co/4nqvFQGM/logo.png" class="w-[140vw] max-w-6xl transform -rotate-12 blur-[1px]" alt="Watermark">
     </div>
 
     <!-- Main Container -->
@@ -72,10 +77,12 @@
         </div>
 
         <!-- VIEW: FORM -->
-        <form id="view-form" class="w-full max-w-2xl bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-5 md:p-10 shadow-2xl animate-fade-in-up ring-1 ring-white/10">
-            
+        <form id="view-form" class="w-full max-w-2xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-5 md:p-10 shadow-2xl animate-fade-in-up ring-1 ring-white/10 relative overflow-hidden">
+            <!-- Glass reflection effect -->
+            <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
+
             <!-- Form Header -->
-            <div class="bg-gradient-to-r from-cyan-500/20 to-blue-600/20 -mx-5 -mt-5 md:-mx-10 md:-mt-10 p-6 md:p-8 rounded-t-[2rem] border-b border-white/10 mb-8 flex items-center gap-4">
+            <div class="relative bg-gradient-to-r from-cyan-500/10 to-blue-600/10 -mx-5 -mt-5 md:-mx-10 md:-mt-10 p-6 md:p-8 rounded-t-[2rem] border-b border-white/10 mb-8 flex items-center gap-4">
                 <div class="p-3 bg-cyan-500/20 rounded-2xl shadow-inner border border-white/10">
                     <i data-lucide="user" class="text-cyan-300 w-7 h-7"></i>
                 </div>
@@ -86,7 +93,7 @@
             </div>
 
             <!-- Fields -->
-            <div class="grid grid-cols-1 gap-6 mb-8">
+            <div class="grid grid-cols-1 gap-6 mb-8 relative z-10">
                 <!-- Name -->
                 <div class="space-y-2">
                     <label class="text-blue-100 text-xs uppercase font-bold tracking-wider ml-1">Nombre Completo</label>
@@ -128,7 +135,7 @@
             </div>
 
             <!-- Experience Section -->
-            <div class="mb-8">
+            <div class="mb-8 relative z-10">
                 <h3 class="text-white font-bold text-lg md:text-xl mb-6 flex items-center gap-2 border-b border-white/10 pb-3">
                     <i data-lucide="layout-dashboard" class="text-cyan-400 w-5 h-5"></i> Experiencia
                 </h3>
@@ -158,7 +165,7 @@
             </div>
 
             <button type="submit" id="btn-submit"
-                class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-5 rounded-xl shadow-lg shadow-cyan-900/40 transform transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-lg tracking-wide uppercase">
+                class="relative z-10 w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-5 rounded-xl shadow-lg shadow-cyan-900/40 transform transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-lg tracking-wide uppercase">
                 Enviar Calificación
             </button>
         </form>
@@ -211,8 +218,8 @@
         <div id="view-admin" class="hidden-view w-full max-w-7xl bg-black/80 backdrop-blur-xl border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl animate-fade-in-up flex flex-col h-[90vh]">
             
             <!-- Admin Header -->
-            <div class="p-6 border-b border-white/10 bg-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="flex items-center gap-3">
+            <div class="p-6 border-b border-white/10 bg-white/5 flex flex-col xl:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3 w-full md:w-auto">
                     <div class="bg-cyan-500/20 p-2 rounded-xl">
                         <i data-lucide="layout-dashboard" class="text-cyan-400 w-6 h-6"></i>
                     </div>
@@ -222,7 +229,8 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap justify-center gap-3">
+                <div class="flex flex-wrap justify-center gap-3 w-full md:w-auto">
+                    <!-- Filter -->
                     <div class="flex items-center gap-2 bg-black/30 px-3 py-2 rounded-xl border border-white/10">
                         <i data-lucide="filter" class="text-blue-300 w-4 h-4"></i>
                         <select id="filter-advisor"
@@ -232,10 +240,19 @@
                         </select>
                     </div>
 
+                    <!-- Share Button (ONLY IN ADMIN) -->
+                    <button onclick="shareSurveyLink()"
+                        class="flex items-center gap-2 px-4 py-2 bg-cyan-600/80 hover:bg-cyan-500 text-white rounded-xl transition text-sm font-bold shadow-lg border border-cyan-500/50">
+                        <i data-lucide="share-2" class="w-4 h-4"></i> <span class="hidden md:inline">Compartir Encuesta</span>
+                    </button>
+
+                    <!-- Export -->
                     <button onclick="exportToExcel()"
-                        class="flex items-center gap-2 px-4 py-2 bg-emerald-600/80 hover:bg-emerald-500 text-white rounded-xl transition text-sm font-bold shadow-lg">
+                        class="flex items-center gap-2 px-4 py-2 bg-emerald-600/80 hover:bg-emerald-500 text-white rounded-xl transition text-sm font-bold shadow-lg border border-emerald-500/50">
                         <i data-lucide="download" class="w-4 h-4"></i> <span class="hidden md:inline">Excel</span>
                     </button>
+                    
+                    <!-- Logout -->
                     <button onclick="switchView('form')"
                         class="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/40 text-red-200 rounded-xl transition text-sm border border-red-500/20">
                         <i data-lucide="log-out" class="w-4 h-4"></i>
@@ -318,13 +335,6 @@
             </div>
         </div>
 
-    </div>
-
-    <!-- Floating Buttons (ADMIN REMOVED - Only visible on 'form' view) -->
-    <div class="fixed bottom-4 left-4 z-50">
-        <button onclick="copyLink()" class="bg-cyan-600/90 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-500/30 backdrop-blur px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 active:scale-95">
-            <i data-lucide="share-2" class="w-4 h-4"></i> Compartir
-        </button>
     </div>
 
     <!-- FIREBASE & APP LOGIC -->
@@ -692,9 +702,23 @@
             XLSX.writeFile(wb, "Reporte_Satisfaccion_Cervantes.xlsx");
         };
 
-        window.copyLink = () => {
-            navigator.clipboard.writeText(window.location.href);
-            alert("Link copiado: " + window.location.href);
+        window.shareSurveyLink = async () => {
+            const shareData = {
+                title: 'Encuesta de Satisfacción',
+                text: 'Por favor ayúdanos respondiendo esta breve encuesta sobre tu asesoría en Cervantes.',
+                url: window.location.href.split('?')[0] // Clean URL without params
+            };
+
+            try {
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                } else {
+                    await navigator.clipboard.writeText(shareData.url);
+                    alert("Link copiado: " + shareData.url);
+                }
+            } catch (err) {
+                console.error('Error sharing:', err);
+            }
         };
 
         // Auth Listener
