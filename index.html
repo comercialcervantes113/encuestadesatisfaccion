@@ -1,1 +1,592 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { Star, CheckCircle, Download, Share2, LayoutDashboard, ChevronDown, User, BookOpen, Lock, BarChart3, Filter, LogOut, Briefcase } from 'lucide-react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { getAnalytics } from 'firebase/analytics';
 
+// --- Firebase Configuration ---
+const firebaseConfig = {
+  apiKey: "AIzaSyBEQEvQl1koLdxXIHqDxtN6rL10_o9eOgY",
+  authDomain: "encuestadesatisfaccion-b8987.firebaseapp.com",
+  projectId: "encuestadesatisfaccion-b8987",
+  storageBucket: "encuestadesatisfaccion-b8987.firebasestorage.app",
+  messagingSenderId: "1053389851284",
+  appId: "1:1053389851284:web:23faa57734226919c78281",
+  measurementId: "G-NGKBBFB24C"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+let analytics;
+try { analytics = getAnalytics(app); } catch (e) { console.log("Analytics skipped"); }
+
+// --- Constants & Options ---
+// Nombres completos de carreras
+const CAREERS = [
+  'Higiene y Seguridad',
+  'Gestión Inmobiliaria',
+  'Administración de Empresas',
+  'Ciencia de Datos e Inteligencia Artificial',
+  'Analista de Sistemas',
+  'Recursos Humanos',
+  'Marketing',
+  'Desarrollo Web y Aplicaciones Digitales'
+];
+
+const ADVISORS = ['Belen', 'Kiara', 'Jeremias', 'Laura', 'No recuerdo'];
+const ADMIN_PASSWORD = "admin";
+
+// --- Helper: Excel Export ---
+const exportToExcel = (data) => {
+  const script = document.createElement('script');
+  script.src = "https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js";
+  script.onload = () => {
+    const formattedData = data.map(item => ({
+      Fecha: item.timestamp ? new Date(item.timestamp.seconds * 1000).toLocaleDateString() : 'N/A',
+      Nombre: item.name,
+      Carrera: item.career,
+      Asesor: item.advisor,
+      'Calificación': item.rating,
+      'Claridad Info': item.clarity,
+      'Explicación Pagos': item.paymentInfo,
+      'Velocidad Respuesta': item.responseSpeed,
+      'Decisión Inscripción': item.decision,
+      'Feedback': item.feedback
+    }));
+
+    const ws = window.XLSX.utils.json_to_sheet(formattedData);
+    const wb = window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(wb, ws, "Encuestas");
+    window.XLSX.writeFile(wb, "Reporte_Satisfaccion_Cervantes.xlsx");
+  };
+  document.head.appendChild(script);
+};
+
+// --- Components ---
+
+const BarChart = ({ title, data, colorClass = "bg-cyan-500" }) => {
+  const maxVal = Math.max(...data.map(d => d.count), 1);
+  return (
+    <div className="bg-white/5 border border-white/10 p-5 rounded-2xl backdrop-blur-md">
+      <h4 className="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2">
+        <BarChart3 size={16} className="text-blue-300" /> {title}
+      </h4>
+      <div className="space-y-3">
+        {data.map((item, idx) => (
+          <div key={idx} className="relative">
+            <div className="flex justify-between text-[10px] md:text-xs text-blue-100 mb-1">
+              <span className="truncate pr-2">{item.label}</span>
+              <span className="font-mono">{item.count}</span>
+            </div>
+            <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden">
+              <div className={`h-full rounded-full transition-all duration-1000 ${colorClass}`} style={{ width: `${(item.count / maxVal) * 100}%` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Custom Select Component for Modern Look
+const ModernSelect = ({ label, value, onChange, options, icon: Icon, placeholder }) => (
+  <div className="space-y-2">
+    <label className="text-blue-100 text-xs uppercase font-bold tracking-wider ml-1">{label}</label>
+    <div className="relative group">
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-300 pointer-events-none z-10">
+        <Icon size={18} />
+      </div>
+      <select 
+        required
+        value={value}
+        onChange={onChange}
+        className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-xl pl-12 pr-10 py-4 appearance-none focus:outline-none focus:bg-black/50 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all cursor-pointer shadow-inner"
+      >
+        <option value="" className="text-gray-500 bg-gray-900">{placeholder}</option>
+        {options.map(opt => <option key={opt} value={opt} className="text-white bg-gray-900 py-2">{opt}</option>)}
+      </select>
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none transition-transform group-hover:text-white group-hover:translate-y-[-40%]">
+        <ChevronDown size={20} />
+      </div>
+    </div>
+  </div>
+);
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [view, setView] = useState('form');
+  const [loading, setLoading] = useState(false);
+  const [surveys, setSurveys] = useState([]);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [filterAdvisor, setFilterAdvisor] = useState("Todos");
+
+  const [formData, setFormData] = useState({
+    name: '', career: '', advisor: '', rating: 0, clarity: '', 
+    paymentInfo: '', responseSpeed: '', decision: '', feedback: ''
+  });
+
+  useEffect(() => {
+    const initAuth = async () => {
+      try { await signInAnonymously(auth); } catch (e) { console.error(e); }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user || view !== 'admin') return;
+    const q = collection(db, 'cervantes_surveys');
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      data.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+      setSurveys(data);
+    }, (err) => {
+      if (err.code === 'permission-denied') alert("Falta configurar las reglas de Firebase.");
+    });
+    return () => unsubscribe();
+  }, [user, view]);
+
+  const filteredData = useMemo(() => {
+    if (filterAdvisor === "Todos") return surveys;
+    return surveys.filter(s => s.advisor === filterAdvisor);
+  }, [surveys, filterAdvisor]);
+
+  const stats = useMemo(() => {
+    const total = filteredData.length;
+    const avgRating = total > 0 ? (filteredData.reduce((acc, curr) => acc + (parseInt(curr.rating) || 0), 0) / total).toFixed(1) : 0;
+    const getCounts = (field, options) => options.map(opt => ({
+      label: opt,
+      count: filteredData.filter(d => d[field] === opt).length
+    }));
+    return {
+      total,
+      avgRating,
+      clarityData: getCounts('clarity', ['Sí', 'Parcialmente', 'No']),
+      decisionData: getCounts('decision', ['Muy decidido/a', 'Bastante decidido/a', 'Con dudas', 'No estoy interesado/a']),
+      paymentData: getCounts('paymentInfo', ['Sí', 'No', 'Me quedaron dudas'])
+    };
+  }, [filteredData]);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (passwordInput === ADMIN_PASSWORD) {
+      setView('admin');
+      setPasswordInput("");
+    } else {
+      alert("Contraseña incorrecta");
+    }
+  };
+
+  const handleInputChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.rating || !formData.career || !formData.advisor) {
+      alert("Por favor completa los campos y califica con estrellas.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await addDoc(collection(db, 'cervantes_surveys'), {
+        ...formData,
+        timestamp: serverTimestamp()
+      });
+      setView('success');
+      setFormData({
+        name: '', career: '', advisor: '', rating: 0, clarity: '', 
+        paymentInfo: '', responseSpeed: '', decision: '', feedback: ''
+      });
+    } catch (error) {
+      alert("Error al enviar. Verifica tu conexión.");
+    }
+    setLoading(false);
+  };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    alert("Link copiado: " + window.location.href);
+  };
+
+  const StarRating = ({ value, onChange, size = 36, readOnly = false }) => (
+    <div className={`flex space-x-2 justify-center ${!readOnly && 'py-2'}`}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          disabled={readOnly}
+          onClick={() => !readOnly && onChange(star)}
+          className={`transition-all duration-300 ${!readOnly ? 'hover:scale-125 hover:rotate-6 focus:outline-none' : 'cursor-default'} ${star <= value ? 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]' : 'text-blue-200/20'}`}
+        >
+          <Star size={size} fill={star <= value ? "currentColor" : "none"} strokeWidth={1.5} />
+        </button>
+      ))}
+    </div>
+  );
+
+  const RadioGroup = ({ label, name, options, selected, onChange }) => (
+    <div className="mb-6 bg-white/5 p-4 md:p-5 rounded-2xl border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors">
+      <label className="block text-white font-medium mb-3 text-sm md:text-base">{label}</label>
+      <div className="flex flex-col gap-2.5">
+        {options.map((opt) => (
+          <label key={opt} className="flex items-center space-x-3 cursor-pointer group hover:bg-white/5 p-2 rounded-xl transition-all">
+            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${selected === opt ? 'border-cyan-400 bg-cyan-400 scale-110 shadow-[0_0_10px_rgba(34,211,238,0.4)]' : 'border-white/30 group-hover:border-white/80'}`}>
+              {selected === opt && <div className="w-2 h-2 rounded-full bg-white" />}
+            </div>
+            <input
+              type="radio"
+              name={name}
+              value={opt}
+              checked={selected === opt}
+              onChange={(e) => onChange(name, e.target.value)}
+              className="hidden"
+            />
+            <span className={`text-sm md:text-base ${selected === opt ? 'text-white font-semibold' : 'text-blue-100/70 group-hover:text-blue-100'}`}>{opt}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen relative font-sans text-slate-800 overflow-x-hidden selection:bg-cyan-500/30">
+      
+      {/* Background Layers */}
+      <div className="fixed inset-0 z-0 bg-cover bg-center" style={{ backgroundImage: `url('https://i.postimg.cc/6wfDzyN9/image.png')` }} />
+      <div className="fixed inset-0 z-0 bg-gradient-to-br from-blue-950/95 via-blue-900/95 to-blue-800/90 backdrop-blur-[2px]" />
+      <div className="fixed inset-0 z-0 flex items-center justify-center opacity-[0.05] pointer-events-none select-none">
+        <img src="https://i.ibb.co/4nqvFQGM/logo.png" className="w-[120vw] max-w-5xl transform -rotate-12" alt="Watermark" />
+      </div>
+
+      <div className="relative z-10 container mx-auto px-4 py-8 md:py-12 flex flex-col items-center justify-center min-h-screen">
+        
+        {/* Header Section */}
+        <div className="mb-10 animate-fade-in-down flex flex-col items-center text-center">
+          <img src="https://i.ibb.co/4nqvFQGM/logo.png" alt="Cervantes Logo" className="h-20 md:h-28 object-contain drop-shadow-2xl mb-6 hover:scale-105 transition-transform duration-500" />
+          {view === 'form' && (
+            <div className="flex flex-col items-center">
+              <h1 className="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-white to-cyan-300 tracking-tight drop-shadow-lg uppercase leading-tight">
+                Califica a tu Asesor
+              </h1>
+              <div className="h-1 w-24 bg-gradient-to-r from-transparent via-cyan-500 to-transparent mt-3 mb-2 opacity-70" />
+              <p className="text-blue-200 text-xs md:text-sm font-bold tracking-[0.25em] uppercase text-shadow-sm">
+                Departamento Comercial
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* --- VIEW: SUCCESS --- */}
+        {view === 'success' && (
+          <div className="w-full max-w-lg bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-10 text-center shadow-2xl animate-scale-in">
+            <div className="flex justify-center mb-8">
+              <div className="bg-gradient-to-tr from-green-400 to-green-600 p-5 rounded-full shadow-[0_0_30px_rgba(74,222,128,0.4)] animate-bounce-slow">
+                <CheckCircle size={64} className="text-white" />
+              </div>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">¡Muchas Gracias!</h2>
+            <p className="text-blue-100 mb-8 leading-relaxed text-lg">Tu opinión es fundamental para nosotros.</p>
+            <button 
+              onClick={() => setView('form')}
+              className="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-semibold py-4 px-10 rounded-full transition-all hover:scale-105 active:scale-95 hover:shadow-lg backdrop-blur-md"
+            >
+              Volver al inicio
+            </button>
+          </div>
+        )}
+
+        {/* --- VIEW: FORM --- */}
+        {view === 'form' && (
+          <form onSubmit={handleSubmit} className="w-full max-w-2xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-5 md:p-10 shadow-2xl animate-fade-in-up">
+            
+            {/* Header Form */}
+            <div className="bg-gradient-to-r from-cyan-500/10 to-blue-600/10 -mx-5 -mt-5 md:-mx-10 md:-mt-10 p-6 md:p-8 rounded-t-[2rem] border-b border-white/5 mb-8 flex items-center gap-4">
+               <div className="p-3 bg-cyan-500/20 rounded-2xl shadow-inner border border-white/5">
+                 <User size={28} className="text-cyan-300" />
+               </div>
+               <div>
+                 <h3 className="text-white font-bold text-lg md:text-xl">Datos de la Asesoría</h3>
+                 <p className="text-blue-200/70 text-xs md:text-sm">Identificación del caso</p>
+               </div>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-6 mb-8">
+              <div className="space-y-2">
+                <label className="text-blue-100 text-xs uppercase font-bold tracking-wider ml-1">Nombre Completo</label>
+                <div className="relative">
+                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-300 pointer-events-none" />
+                  <input 
+                    type="text" 
+                    required
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    className="w-full bg-black/30 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white text-sm placeholder-white/20 focus:outline-none focus:bg-black/50 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all shadow-inner"
+                    placeholder="Ej: Juan Pérez"
+                  />
+                </div>
+              </div>
+
+              <ModernSelect 
+                label="Carrera de Interés"
+                value={formData.career}
+                onChange={(e) => handleInputChange('career', e.target.value)}
+                options={CAREERS}
+                icon={BookOpen}
+                placeholder="Selecciona la carrera..."
+              />
+
+              <ModernSelect 
+                label="Asesor/a"
+                value={formData.advisor}
+                onChange={(e) => handleInputChange('advisor', e.target.value)}
+                options={ADVISORS}
+                icon={Briefcase}
+                placeholder="¿Quién te atendió?"
+              />
+            </div>
+
+            <div className="mb-8">
+              <h3 className="text-white font-bold text-lg md:text-xl mb-6 flex items-center gap-2 border-b border-white/10 pb-3">
+                <LayoutDashboard size={20} className="text-cyan-400" /> Experiencia
+              </h3>
+
+              <div className="mb-8 text-center bg-gradient-to-b from-white/5 to-transparent p-6 rounded-2xl border border-white/5 ring-1 ring-white/10 hover:ring-cyan-500/30 transition-all group">
+                <label className="block text-white text-lg font-medium mb-1 group-hover:text-cyan-300 transition-colors">Calificación General</label>
+                <p className="text-blue-200/60 text-xs mb-4">Toca las estrellas para calificar</p>
+                <StarRating value={formData.rating} onChange={(val) => handleInputChange('rating', val)} size={42} />
+              </div>
+
+              <RadioGroup 
+                label="¿La información sobre la carrera y modalidades fue clara?"
+                name="clarity"
+                selected={formData.clarity}
+                onChange={handleInputChange}
+                options={['Sí', 'Parcialmente', 'No']}
+              />
+
+              <RadioGroup 
+                label="¿Te explicaron bien los descuentos y formas de pago?"
+                name="paymentInfo"
+                selected={formData.paymentInfo}
+                onChange={handleInputChange}
+                options={['Sí', 'No', 'Me quedaron dudas']}
+              />
+
+              <RadioGroup 
+                label="Velocidad de respuesta"
+                name="responseSpeed"
+                selected={formData.responseSpeed}
+                onChange={handleInputChange}
+                options={['Muy rápido', 'Adecuado', 'Lento']}
+              />
+
+              <RadioGroup 
+                label="¿Cómo te sientes respecto a inscribirte?"
+                name="decision"
+                selected={formData.decision}
+                onChange={handleInputChange}
+                options={['Muy decidido/a', 'Bastante decidido/a', 'Con dudas', 'No estoy interesado/a']}
+              />
+
+              <div className="space-y-2 mt-8">
+                <label className="text-blue-100 text-xs uppercase font-bold tracking-wider ml-1">Sugerencias o Comentarios</label>
+                <textarea 
+                  rows="3"
+                  value={formData.feedback}
+                  onChange={(e) => handleInputChange('feedback', e.target.value)}
+                  className="w-full bg-black/30 border border-white/10 rounded-xl px-5 py-4 text-white placeholder-white/20 focus:outline-none focus:bg-black/50 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all resize-none text-sm"
+                  placeholder="¿En qué podemos mejorar?"
+                />
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-5 rounded-xl shadow-lg shadow-cyan-900/40 transform transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-lg tracking-wide uppercase"
+            >
+              {loading ? 'Enviando...' : 'Enviar Calificación'}
+            </button>
+          </form>
+        )}
+
+        {/* --- VIEW: LOGIN --- */}
+        {view === 'login' && (
+          <div className="w-full max-w-sm bg-black/60 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl animate-fade-in-up">
+             <div className="flex justify-center mb-6">
+               <div className="p-4 bg-cyan-500/10 rounded-full border border-cyan-500/20">
+                 <Lock size={32} className="text-cyan-400" />
+               </div>
+             </div>
+             <h2 className="text-xl font-bold text-white text-center mb-6">Acceso Administrativo</h2>
+             <form onSubmit={handleLogin} className="space-y-4">
+               <div>
+                 <label className="text-xs text-blue-200 uppercase font-bold tracking-wider ml-1">Contraseña</label>
+                 <input 
+                   type="password"
+                   value={passwordInput}
+                   onChange={(e) => setPasswordInput(e.target.value)}
+                   className="w-full mt-2 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-400 transition-all text-center tracking-widest"
+                   placeholder="••••••"
+                 />
+               </div>
+               <div className="flex gap-3 pt-2">
+                 <button 
+                    type="button" 
+                    onClick={() => setView('form')}
+                    className="flex-1 py-3 rounded-xl border border-white/10 text-white/70 hover:bg-white/5 transition text-sm font-semibold"
+                 >
+                   Volver
+                 </button>
+                 <button 
+                    type="submit"
+                    className="flex-1 py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold shadow-lg transition text-sm"
+                 >
+                   Entrar
+                 </button>
+               </div>
+             </form>
+          </div>
+        )}
+
+        {/* --- VIEW: ADMIN DASHBOARD --- */}
+        {view === 'admin' && (
+          <div className="w-full max-w-7xl bg-black/60 backdrop-blur-xl border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl animate-fade-in-up flex flex-col h-[90vh]">
+            
+            {/* Admin Header */}
+            <div className="p-6 border-b border-white/10 bg-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-cyan-500/20 p-2 rounded-xl">
+                  <LayoutDashboard size={24} className="text-cyan-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg md:text-xl font-bold text-white">Resultados</h2>
+                  <p className="text-blue-200/50 text-xs uppercase tracking-wider">Panel de Control</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-3">
+                 <div className="flex items-center gap-2 bg-black/30 px-3 py-2 rounded-xl border border-white/10">
+                   <Filter size={14} className="text-blue-300" />
+                   <select 
+                      value={filterAdvisor}
+                      onChange={(e) => setFilterAdvisor(e.target.value)}
+                      className="bg-transparent text-white text-sm border-none focus:ring-0 cursor-pointer appearance-none pr-4 font-medium"
+                    >
+                      <option value="Todos" className="text-black">Todos</option>
+                      {ADVISORS.map(a => <option key={a} value={a} className="text-black">{a}</option>)}
+                    </select>
+                 </div>
+
+                <button 
+                  onClick={() => exportToExcel(filteredData)}
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600/80 hover:bg-emerald-500 text-white rounded-xl transition text-sm font-bold shadow-lg"
+                >
+                  <Download size={16} /> <span className="hidden md:inline">Excel</span>
+                </button>
+                <button 
+                  onClick={() => setView('form')}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/40 text-red-200 rounded-xl transition text-sm border border-red-500/20"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+              
+              {/* KPIS */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div className="bg-white/5 border border-white/10 p-5 rounded-2xl">
+                  <div className="text-blue-200 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Total</div>
+                  <div className="text-2xl md:text-4xl font-bold text-white">{stats.total}</div>
+                </div>
+                <div className="bg-white/5 border border-white/10 p-5 rounded-2xl">
+                   <div className="text-blue-200 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Promedio</div>
+                   <div className="text-2xl md:text-4xl font-bold text-yellow-400">{stats.avgRating}</div>
+                </div>
+                <div className="col-span-2 bg-white/5 border border-white/10 p-5 rounded-2xl flex flex-col justify-center">
+                   <div className="text-blue-200 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Último Feedback</div>
+                   <div className="text-white text-xs md:text-sm italic truncate opacity-70">"{filteredData.length > 0 ? (filteredData[0].feedback || "-") : "-"}"</div>
+                </div>
+              </div>
+
+              {/* Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <BarChart title="Claridad" data={stats.clarityData} colorClass="bg-cyan-500" />
+                <BarChart title="Decisión" data={stats.decisionData} colorClass="bg-green-500" />
+                <BarChart title="Pagos" data={stats.paymentData} colorClass="bg-purple-500" />
+              </div>
+
+              {/* Table */}
+              <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-md">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead className="bg-black/20 text-blue-200 text-xs uppercase tracking-wider">
+                      <tr>
+                        <th className="p-4 font-semibold">Fecha</th>
+                        <th className="p-4 font-semibold">Inscripto</th>
+                        <th className="p-4 font-semibold">Carrera</th>
+                        <th className="p-4 font-semibold">Asesor</th>
+                        <th className="p-4 font-semibold text-center">★</th>
+                        <th className="p-4 font-semibold">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-white text-xs md:text-sm">
+                      {filteredData.map((s) => (
+                        <tr key={s.id} className="hover:bg-white/5 transition-colors">
+                          <td className="p-4 whitespace-nowrap opacity-60">
+                            {s.timestamp ? new Date(s.timestamp.seconds * 1000).toLocaleDateString() : '-'}
+                          </td>
+                          <td className="p-4 font-medium">{s.name}</td>
+                          <td className="p-4"><span className="px-2 py-1 bg-white/5 rounded text-[10px] border border-white/5">{s.career}</span></td>
+                          <td className="p-4 text-cyan-200">{s.advisor}</td>
+                          <td className="p-4 text-center font-bold text-yellow-400">{s.rating}</td>
+                          <td className="p-4 opacity-70">{s.decision}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      <div className="fixed bottom-4 right-4 z-50">
+        {view !== 'admin' && view !== 'login' && (
+          <button onClick={() => setView('login')} className="bg-black/40 hover:bg-black/60 text-white/30 hover:text-white backdrop-blur px-3 py-1.5 rounded-full text-xs transition-all border border-white/5 flex items-center gap-2">
+            <Lock size={10} /> Admin
+          </button>
+        )}
+      </div>
+
+       <div className="fixed bottom-4 left-4 z-50">
+          <button onClick={copyLink} className="bg-cyan-600/90 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-500/30 backdrop-blur px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 active:scale-95">
+            <Share2 size={14} /> Compartir
+          </button>
+       </div>
+
+      <style>{`
+        .animate-fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+        .animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .animate-fade-in-down { animation: fadeInDown 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+        .animate-bounce-slow { animation: bounce 3s infinite; }
+        
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-40px); } to { opacity: 1; transform: translateY(0); } }
+
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+      `}</style>
+    </div>
+  );
+}
