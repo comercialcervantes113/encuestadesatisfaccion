@@ -45,9 +45,12 @@
 <body class="bg-slate-900 text-slate-800 min-h-screen relative overflow-x-hidden selection:bg-cyan-500/30">
 
     <!-- Background Layers -->
+    <!-- Capa 1: Imagen de fondo -->
     <div class="fixed inset-0 z-0 bg-cover bg-center" style="background-image: url('https://i.postimg.cc/6wfDzyN9/image.png')"></div>
-    <div class="fixed inset-0 z-0 bg-gradient-to-br from-blue-950/95 via-blue-900/95 to-blue-800/90 backdrop-blur-[2px]"></div>
-    <div class="fixed inset-0 z-0 flex items-center justify-center opacity-[0.05] pointer-events-none select-none">
+    <!-- Capa 2: Degradado azul -->
+    <div class="fixed inset-0 z-0 bg-gradient-to-br from-blue-950/90 via-blue-900/90 to-blue-800/85 backdrop-blur-[2px]"></div>
+    <!-- Capa 3: Marca de agua (Logo) - Opacidad aumentada al 15% -->
+    <div class="fixed inset-0 z-0 flex items-center justify-center opacity-[0.15] pointer-events-none select-none">
         <img src="https://i.ibb.co/4nqvFQGM/logo.png" class="w-[120vw] max-w-5xl transform -rotate-12" alt="Watermark">
     </div>
 
@@ -56,7 +59,7 @@
 
         <!-- Header -->
         <div id="app-header" class="mb-10 animate-fade-in-down flex flex-col items-center text-center">
-            <img src="https://i.ibb.co/4nqvFQGM/logo.png" alt="Cervantes Logo" class="h-20 md:h-28 object-contain drop-shadow-2xl mb-6 hover:scale-105 transition-transform duration-500">
+            <img src="https://i.ibb.co/4nqvFQGM/logo.png" alt="Cervantes Logo" class="h-24 md:h-32 object-contain drop-shadow-2xl mb-6 hover:scale-105 transition-transform duration-500">
             <div id="header-text">
                 <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-white to-cyan-300 tracking-tight drop-shadow-lg uppercase leading-tight">
                     Califica a tu Asesor
@@ -69,11 +72,11 @@
         </div>
 
         <!-- VIEW: FORM -->
-        <form id="view-form" class="w-full max-w-2xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-5 md:p-10 shadow-2xl animate-fade-in-up">
+        <form id="view-form" class="w-full max-w-2xl bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-5 md:p-10 shadow-2xl animate-fade-in-up ring-1 ring-white/10">
             
             <!-- Form Header -->
-            <div class="bg-gradient-to-r from-cyan-500/10 to-blue-600/10 -mx-5 -mt-5 md:-mx-10 md:-mt-10 p-6 md:p-8 rounded-t-[2rem] border-b border-white/5 mb-8 flex items-center gap-4">
-                <div class="p-3 bg-cyan-500/20 rounded-2xl shadow-inner border border-white/5">
+            <div class="bg-gradient-to-r from-cyan-500/20 to-blue-600/20 -mx-5 -mt-5 md:-mx-10 md:-mt-10 p-6 md:p-8 rounded-t-[2rem] border-b border-white/10 mb-8 flex items-center gap-4">
+                <div class="p-3 bg-cyan-500/20 rounded-2xl shadow-inner border border-white/10">
                     <i data-lucide="user" class="text-cyan-300 w-7 h-7"></i>
                 </div>
                 <div>
@@ -90,7 +93,7 @@
                     <div class="relative">
                         <i data-lucide="user" class="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-300 w-5 h-5 pointer-events-none"></i>
                         <input type="text" id="input-name" required
-                            class="w-full bg-black/30 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white text-sm placeholder-white/20 focus:outline-none focus:bg-black/50 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all shadow-inner"
+                            class="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white text-sm placeholder-white/20 focus:outline-none focus:bg-black/60 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all shadow-inner"
                             placeholder="Ej: Juan Pérez">
                     </div>
                 </div>
@@ -101,7 +104,7 @@
                     <div class="relative group">
                         <i data-lucide="book-open" class="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-300 w-5 h-5 pointer-events-none z-10"></i>
                         <select id="input-career" required
-                            class="w-full bg-black/30 border border-white/10 text-white text-sm rounded-xl pl-12 pr-10 py-4 focus:outline-none focus:bg-black/50 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all cursor-pointer shadow-inner">
+                            class="w-full bg-black/40 border border-white/10 text-white text-sm rounded-xl pl-12 pr-10 py-4 focus:outline-none focus:bg-black/60 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all cursor-pointer shadow-inner">
                             <option value="" class="text-gray-500 bg-gray-900">Selecciona la carrera...</option>
                             <!-- Options filled by JS -->
                         </select>
@@ -115,7 +118,7 @@
                     <div class="relative group">
                         <i data-lucide="briefcase" class="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-300 w-5 h-5 pointer-events-none z-10"></i>
                         <select id="input-advisor" required
-                            class="w-full bg-black/30 border border-white/10 text-white text-sm rounded-xl pl-12 pr-10 py-4 focus:outline-none focus:bg-black/50 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all cursor-pointer shadow-inner">
+                            class="w-full bg-black/40 border border-white/10 text-white text-sm rounded-xl pl-12 pr-10 py-4 focus:outline-none focus:bg-black/60 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all cursor-pointer shadow-inner">
                             <option value="" class="text-gray-500 bg-gray-900">¿Quién te atendió?</option>
                             <!-- Options filled by JS -->
                         </select>
@@ -131,7 +134,7 @@
                 </h3>
 
                 <!-- Stars -->
-                <div class="mb-8 text-center bg-gradient-to-b from-white/5 to-transparent p-6 rounded-2xl border border-white/5 ring-1 ring-white/10 hover:ring-cyan-500/30 transition-all group">
+                <div class="mb-8 text-center bg-gradient-to-b from-white/10 to-transparent p-6 rounded-2xl border border-white/10 ring-1 ring-white/10 hover:ring-cyan-500/30 transition-all group">
                     <label class="block text-white text-lg font-medium mb-1 group-hover:text-cyan-300 transition-colors">Calificación General</label>
                     <p class="text-blue-200/60 text-xs mb-4">Toca las estrellas para calificar</p>
                     <div id="star-rating-container" class="flex justify-center space-x-2">
@@ -149,7 +152,7 @@
                 <div class="space-y-2 mt-8">
                     <label class="text-blue-100 text-xs uppercase font-bold tracking-wider ml-1">Sugerencias o Comentarios</label>
                     <textarea id="input-feedback" rows="3"
-                        class="w-full bg-black/30 border border-white/10 rounded-xl px-5 py-4 text-white placeholder-white/20 focus:outline-none focus:bg-black/50 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all resize-none text-sm"
+                        class="w-full bg-black/40 border border-white/10 rounded-xl px-5 py-4 text-white placeholder-white/20 focus:outline-none focus:bg-black/60 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all resize-none text-sm"
                         placeholder="¿En qué podemos mejorar?"></textarea>
                 </div>
             </div>
@@ -205,7 +208,7 @@
         </div>
 
         <!-- VIEW: ADMIN DASHBOARD -->
-        <div id="view-admin" class="hidden-view w-full max-w-7xl bg-black/60 backdrop-blur-xl border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl animate-fade-in-up flex flex-col h-[90vh]">
+        <div id="view-admin" class="hidden-view w-full max-w-7xl bg-black/80 backdrop-blur-xl border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl animate-fade-in-up flex flex-col h-[90vh]">
             
             <!-- Admin Header -->
             <div class="p-6 border-b border-white/10 bg-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
@@ -258,28 +261,35 @@
                     </div>
                 </div>
 
-                <!-- Charts Area -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Charts Area (Grid 2x2 now) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                     <!-- Chart 1 -->
                     <div class="bg-white/5 border border-white/10 p-5 rounded-2xl backdrop-blur-md">
                         <h4 class="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2">
-                            <i data-lucide="bar-chart-3" class="text-blue-300 w-4 h-4"></i> Claridad
+                            <i data-lucide="info" class="text-cyan-400 w-4 h-4"></i> Claridad
                         </h4>
                         <div id="chart-clarity" class="space-y-3"></div>
                     </div>
                     <!-- Chart 2 -->
                     <div class="bg-white/5 border border-white/10 p-5 rounded-2xl backdrop-blur-md">
                         <h4 class="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2">
-                            <i data-lucide="bar-chart-3" class="text-blue-300 w-4 h-4"></i> Decisión
+                            <i data-lucide="check-circle-2" class="text-green-400 w-4 h-4"></i> Decisión
                         </h4>
                         <div id="chart-decision" class="space-y-3"></div>
                     </div>
                     <!-- Chart 3 -->
                     <div class="bg-white/5 border border-white/10 p-5 rounded-2xl backdrop-blur-md">
                         <h4 class="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2">
-                            <i data-lucide="bar-chart-3" class="text-blue-300 w-4 h-4"></i> Pagos
+                            <i data-lucide="credit-card" class="text-purple-400 w-4 h-4"></i> Pagos
                         </h4>
                         <div id="chart-payment" class="space-y-3"></div>
+                    </div>
+                    <!-- Chart 4 (New) -->
+                    <div class="bg-white/5 border border-white/10 p-5 rounded-2xl backdrop-blur-md">
+                        <h4 class="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2">
+                            <i data-lucide="timer" class="text-orange-400 w-4 h-4"></i> Velocidad
+                        </h4>
+                        <div id="chart-speed" class="space-y-3"></div>
                     </div>
                 </div>
 
@@ -287,7 +297,7 @@
                 <div class="bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-md">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left">
-                            <thead class="bg-black/20 text-blue-200 text-xs uppercase tracking-wider">
+                            <thead class="bg-black/40 text-blue-200 text-xs uppercase tracking-wider sticky top-0">
                                 <tr>
                                     <th class="p-4 font-semibold">Fecha</th>
                                     <th class="p-4 font-semibold">Inscripto</th>
@@ -295,6 +305,7 @@
                                     <th class="p-4 font-semibold">Asesor</th>
                                     <th class="p-4 font-semibold text-center">★</th>
                                     <th class="p-4 font-semibold">Estado</th>
+                                    <th class="p-4 font-semibold">Velocidad</th>
                                 </tr>
                             </thead>
                             <tbody id="table-body" class="divide-y divide-white/5 text-white text-xs md:text-sm">
@@ -309,13 +320,7 @@
 
     </div>
 
-    <!-- Floating Buttons -->
-    <div class="fixed bottom-4 right-4 z-50" id="btn-admin-login-wrapper">
-        <button onclick="switchView('login')" class="bg-black/40 hover:bg-black/60 text-white/30 hover:text-white backdrop-blur px-3 py-1.5 rounded-full text-xs transition-all border border-white/5 flex items-center gap-2">
-            <i data-lucide="lock" class="w-3 h-3"></i> Admin
-        </button>
-    </div>
-
+    <!-- Floating Buttons (ADMIN REMOVED - Only visible on 'form' view) -->
     <div class="fixed bottom-4 left-4 z-50">
         <button onclick="copyLink()" class="bg-cyan-600/90 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-500/30 backdrop-blur px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 active:scale-95">
             <i data-lucide="share-2" class="w-4 h-4"></i> Compartir
@@ -355,6 +360,16 @@
         const ADVISORS = ['Belen', 'Kiara', 'Jeremias', 'Laura', 'No recuerdo'];
         const ADMIN_PASSWORD = "admin";
 
+        // Icon Helper for Answers
+        const getIconForAnswer = (text) => {
+            if (!text) return "";
+            if (text.includes("Sí") || text.includes("Adecuado") || text.includes("Muy decidido")) return "✅ " + text;
+            if (text.includes("No") || text.includes("Lento") || text.includes("No estoy")) return "❌ " + text;
+            if (text.includes("Parcialmente") || text.includes("dudas") || text.includes("Bastante")) return "⚠️ " + text;
+            if (text.includes("Muy rápido")) return "🚀 " + text;
+            return text;
+        };
+
         // Global State
         let currentUser = null;
         let surveysData = [];
@@ -368,7 +383,6 @@
             admin: document.getElementById('view-admin')
         };
         const headerText = document.getElementById('header-text');
-        const adminBtnWrapper = document.getElementById('btn-admin-login-wrapper');
 
         // --- Initialization ---
         window.switchView = (viewName) => {
@@ -384,13 +398,6 @@
                 headerText.style.display = 'none';
             }
 
-            // Admin button visibility
-            if (viewName === 'admin' || viewName === 'login') {
-                adminBtnWrapper.classList.add('hidden-view');
-            } else {
-                adminBtnWrapper.classList.remove('hidden-view');
-            }
-
             // Trigger admin data load
             if (viewName === 'admin') loadAdminData();
 
@@ -398,6 +405,12 @@
         };
 
         function initForm() {
+            // Check for Admin Mode via URL Parameter (?mode=admin)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mode') === 'admin') {
+                switchView('login');
+            }
+
             // Populate Selects
             const careerSelect = document.getElementById('input-career');
             CAREERS.forEach(c => {
@@ -615,7 +628,7 @@
                     item.className = "relative";
                     item.innerHTML = `
                         <div class="flex justify-between text-[10px] md:text-xs text-blue-100 mb-1">
-                            <span class="truncate pr-2">${opt}</span>
+                            <span class="truncate pr-2">${getIconForAnswer(opt)}</span>
                             <span class="font-mono">${count}</span>
                         </div>
                         <div class="w-full bg-white/5 rounded-full h-2 overflow-hidden">
@@ -629,12 +642,13 @@
             renderChart('chart-clarity', 'clarity', ['Sí', 'Parcialmente', 'No'], 'bg-cyan-500');
             renderChart('chart-decision', 'decision', ['Muy decidido/a', 'Bastante decidido/a', 'Con dudas', 'No estoy interesado/a'], 'bg-green-500');
             renderChart('chart-payment', 'paymentInfo', ['Sí', 'No', 'Me quedaron dudas'], 'bg-purple-500');
+            renderChart('chart-speed', 'responseSpeed', ['Muy rápido', 'Adecuado', 'Lento'], 'bg-orange-500');
 
             // Table
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = "";
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-white/30">No hay datos.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-white/30">No hay datos.</td></tr>`;
             } else {
                 filtered.forEach(s => {
                     const date = s.timestamp ? new Date(s.timestamp.seconds * 1000).toLocaleDateString() : '-';
@@ -646,7 +660,8 @@
                         <td class="p-4"><span class="px-2 py-1 bg-white/5 rounded text-[10px] border border-white/5">${s.career}</span></td>
                         <td class="p-4 text-cyan-200">${s.advisor}</td>
                         <td class="p-4 text-center font-bold text-yellow-400">${s.rating}</td>
-                        <td class="p-4 opacity-70">${s.decision}</td>
+                        <td class="p-4 opacity-70">${getIconForAnswer(s.decision)}</td>
+                        <td class="p-4 opacity-70">${getIconForAnswer(s.responseSpeed)}</td>
                     `;
                     tbody.appendChild(tr);
                 });
