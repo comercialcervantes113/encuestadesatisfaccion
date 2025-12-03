@@ -171,7 +171,10 @@
                     </div>
                     <div>
                         <h2 class="text-lg md:text-xl font-bold text-white">Resultados</h2>
-                        <p class="text-blue-200/50 text-xs uppercase tracking-wider">Panel de Control</p>
+                        <div class="flex items-center gap-2">
+                            <p class="text-blue-200/50 text-xs uppercase tracking-wider">Panel de Control</p>
+                            <span id="view-mode-badge" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider hidden"></span>
+                        </div>
                     </div>
                 </div>
 
@@ -189,7 +192,7 @@
                         </div>
                     </div>
 
-                    <!-- Share Button -->
+                    <!-- Share Button (Editor & Viewer) -->
                     <button onclick="shareSurveyLink()" class="flex items-center gap-2 px-4 py-2.5 bg-cyan-600/80 hover:bg-cyan-500 text-white rounded-xl transition text-sm font-bold shadow-lg border border-cyan-500/50">
                         <i data-lucide="share-2" class="w-4 h-4"></i> <span class="hidden md:inline">Compartir</span>
                     </button>
@@ -252,7 +255,8 @@
                                     <th class="p-4 font-semibold">Asesor</th>
                                     <th class="p-4 font-semibold text-center">★</th>
                                     <th class="p-4 font-semibold">Estado</th>
-                                    <th class="p-4 font-semibold">Acciones</th>
+                                    <!-- This header visibility is toggled via JS -->
+                                    <th id="th-actions" class="p-4 font-semibold text-right">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="table-body" class="divide-y divide-white/5 text-white text-xs md:text-sm">
@@ -361,6 +365,7 @@
 
         let surveysData = [];
         let currentFilter = "Todos";
+        let appMode = 'form'; // 'form', 'admin', 'view'
 
         const views = {
             form: document.getElementById('view-form'),
@@ -379,8 +384,23 @@
         };
 
         function initForm() {
+            // Check for Mode via URL Parameter
             const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('mode') === 'admin') switchView('admin');
+            const modeParam = urlParams.get('mode');
+            
+            if (modeParam === 'admin') {
+                appMode = 'admin';
+                switchView('admin');
+                document.getElementById('view-mode-badge').textContent = "MODO EDITOR";
+                document.getElementById('view-mode-badge').className = "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-500 text-white";
+                document.getElementById('view-mode-badge').classList.remove('hidden');
+            } else if (modeParam === 'view') {
+                appMode = 'view';
+                switchView('admin');
+                document.getElementById('view-mode-badge').textContent = "MODO VISUALIZADOR";
+                document.getElementById('view-mode-badge').className = "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-500 text-white";
+                document.getElementById('view-mode-badge').classList.remove('hidden');
+            }
 
             const populate = (id, opts, isEdit) => {
                 const sel = document.getElementById(id);
@@ -538,6 +558,14 @@
             document.getElementById('stat-avg').textContent = avg;
             document.getElementById('stat-last-feedback').textContent = filtered.length > 0 ? `"${filtered[0].feedback || '...'}"` : "-";
 
+            // Hide/Show Actions Header based on Mode
+            const actionsHeader = document.getElementById('th-actions');
+            if (appMode === 'view') {
+                actionsHeader.style.display = 'none';
+            } else {
+                actionsHeader.style.display = 'table-cell';
+            }
+
             const renderChart = (id, field, opts, color) => {
                 const con = document.getElementById(id); con.innerHTML = "";
                 const max = Math.max(...opts.map(o => filtered.filter(f => f[field] === o).length), 1);
@@ -558,6 +586,18 @@
             else {
                 filtered.forEach(s => {
                     const date = s.timestamp ? new Date(s.timestamp.seconds * 1000).toLocaleDateString() : '-';
+                    
+                    // Generate Actions Cell only if Admin Mode
+                    let actionsHtml = '';
+                    if (appMode === 'admin') {
+                        actionsHtml = `
+                            <td class="p-4 flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="window.openEdit('${s.id}')" class="p-2 bg-blue-500/20 hover:bg-blue-500 text-blue-200 hover:text-white rounded-lg transition"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                <button onclick="window.deleteSurvey('${s.id}')" class="p-2 bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white rounded-lg transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </td>
+                        `;
+                    }
+
                     const tr = document.createElement('tr');
                     tr.className = "hover:bg-white/5 transition-colors group";
                     tr.innerHTML = `
@@ -567,10 +607,7 @@
                         <td class="p-4 text-cyan-200">${s.advisor}</td>
                         <td class="p-4 text-center font-bold text-yellow-400">${s.rating}</td>
                         <td class="p-4 opacity-70 text-xs">${getIconForAnswer(s.decision)}</td>
-                        <td class="p-4 flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onclick="window.openEdit('${s.id}')" class="p-2 bg-blue-500/20 hover:bg-blue-500 text-blue-200 hover:text-white rounded-lg transition"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                            <button onclick="window.deleteSurvey('${s.id}')" class="p-2 bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white rounded-lg transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                        </td>
+                        ${actionsHtml}
                     `;
                     tbody.appendChild(tr);
                 });
