@@ -40,23 +40,19 @@
         select { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
         
         .hidden-view { display: none !important; }
+        
+        /* Modal Blur */
+        .modal-blur { backdrop-filter: blur(8px); }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-800 min-h-screen relative overflow-x-hidden selection:bg-cyan-500/30">
 
-    <!-- Background Layers (Mejorados para fusión oscura) -->
-    <!-- Capa 1: Imagen base -->
+    <!-- Background Layers -->
     <div class="fixed inset-0 z-0 bg-cover bg-center opacity-60" style="background-image: url('https://i.postimg.cc/6wfDzyN9/image.png')"></div>
-    
-    <!-- Capa 2: Degradado de Fusión (Multiply para oscurecer y tintar) -->
     <div class="fixed inset-0 z-0 bg-gradient-to-br from-blue-950 via-blue-900 to-slate-900 mix-blend-multiply opacity-90"></div>
-    
-    <!-- Capa 3: Degradado superior para brillo sutil -->
     <div class="fixed inset-0 z-0 bg-gradient-to-t from-black/80 via-blue-900/20 to-transparent"></div>
-
-    <!-- Capa 4: Marca de agua (Logo) - Más visible y grande -->
     <div class="fixed inset-0 z-0 flex items-center justify-center opacity-[0.25] pointer-events-none select-none mix-blend-overlay">
-        <img src="https://i.ibb.co/4nqvFQGM/logo.png" class="w-[140vw] max-w-6xl transform -rotate-12 blur-[1px]" alt="Watermark">
+        <img src="https://i.postimg.cc/qJpzHLVp/logoic1.png" class="w-[140vw] max-w-6xl transform -rotate-12 blur-[1px]" alt="Watermark" onerror="this.style.display='none'">
     </div>
 
     <!-- Main Container -->
@@ -64,7 +60,7 @@
 
         <!-- Header -->
         <div id="app-header" class="mb-10 animate-fade-in-down flex flex-col items-center text-center">
-            <img src="https://i.ibb.co/4nqvFQGM/logo.png" alt="Cervantes Logo" class="h-24 md:h-32 object-contain drop-shadow-2xl mb-6 hover:scale-105 transition-transform duration-500">
+            <img src="https://i.postimg.cc/qJpzHLVp/logoic1.png" alt="Cervantes Logo" class="h-24 md:h-32 object-contain drop-shadow-2xl mb-6 hover:scale-105 transition-transform duration-500">
             <div id="header-text">
                 <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-white to-cyan-300 tracking-tight drop-shadow-lg uppercase leading-tight">
                     Calificá a tu Asesor Comercial
@@ -78,10 +74,8 @@
 
         <!-- VIEW: FORM -->
         <form id="view-form" class="w-full max-w-2xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-5 md:p-10 shadow-2xl animate-fade-in-up ring-1 ring-white/10 relative overflow-hidden">
-            <!-- Glass reflection effect -->
             <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
 
-            <!-- Form Header -->
             <div class="relative bg-gradient-to-r from-cyan-500/10 to-blue-600/10 -mx-5 -mt-5 md:-mx-10 md:-mt-10 p-6 md:p-8 rounded-t-[2rem] border-b border-white/10 mb-8 flex items-center gap-4">
                 <div class="p-3 bg-cyan-500/20 rounded-2xl shadow-inner border border-white/10">
                     <i data-lucide="clipboard-list" class="text-cyan-300 w-7 h-7"></i>
@@ -92,9 +86,7 @@
                 </div>
             </div>
 
-            <!-- Fields -->
             <div class="grid grid-cols-1 gap-6 mb-8 relative z-10">
-                <!-- Name -->
                 <div class="space-y-2">
                     <label class="text-blue-100 text-xs uppercase font-bold tracking-wider ml-1">Nombre Completo</label>
                     <div class="relative">
@@ -104,8 +96,6 @@
                             placeholder="Ej: Juan Pérez">
                     </div>
                 </div>
-
-                <!-- Career -->
                 <div class="space-y-2">
                     <label class="text-blue-100 text-xs uppercase font-bold tracking-wider ml-1">Carrera de Interés</label>
                     <div class="relative group">
@@ -113,13 +103,10 @@
                         <select id="input-career" required
                             class="w-full bg-black/40 border border-white/10 text-white text-sm rounded-xl pl-12 pr-10 py-4 focus:outline-none focus:bg-black/60 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all cursor-pointer shadow-inner">
                             <option value="" class="text-gray-500 bg-gray-900">Selecciona la carrera...</option>
-                            <!-- Options filled by JS -->
                         </select>
                         <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none w-5 h-5"></i>
                     </div>
                 </div>
-
-                <!-- Advisor -->
                 <div class="space-y-2">
                     <label class="text-blue-100 text-xs uppercase font-bold tracking-wider ml-1">Asesor/a</label>
                     <div class="relative group">
@@ -127,35 +114,23 @@
                         <select id="input-advisor" required
                             class="w-full bg-black/40 border border-white/10 text-white text-sm rounded-xl pl-12 pr-10 py-4 focus:outline-none focus:bg-black/60 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all cursor-pointer shadow-inner">
                             <option value="" class="text-gray-500 bg-gray-900">¿Quién te atendió?</option>
-                            <!-- Options filled by JS -->
                         </select>
                         <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none w-5 h-5"></i>
                     </div>
                 </div>
             </div>
 
-            <!-- Experience Section -->
             <div class="mb-8 relative z-10">
                 <h3 class="text-white font-bold text-lg md:text-xl mb-6 flex items-center gap-2 border-b border-white/10 pb-3">
                     <i data-lucide="layout-dashboard" class="text-cyan-400 w-5 h-5"></i> Experiencia
                 </h3>
-
-                <!-- Stars -->
                 <div class="mb-8 text-center bg-gradient-to-b from-white/10 to-transparent p-6 rounded-2xl border border-white/10 ring-1 ring-white/10 hover:ring-cyan-500/30 transition-all group">
                     <label class="block text-white text-lg font-medium mb-1 group-hover:text-cyan-300 transition-colors">Calificación General</label>
                     <p class="text-blue-200/60 text-xs mb-4">Toca las estrellas para calificar</p>
-                    <div id="star-rating-container" class="flex justify-center space-x-2">
-                        <!-- Stars generated by JS -->
-                    </div>
+                    <div id="star-rating-container" class="flex justify-center space-x-2"></div>
                     <input type="hidden" id="input-rating" value="0">
                 </div>
-
-                <!-- Logic Questions Container -->
-                <div id="questions-container">
-                    <!-- Radio groups generated by JS -->
-                </div>
-
-                <!-- Feedback -->
+                <div id="questions-container"></div>
                 <div class="space-y-2 mt-8">
                     <label class="text-blue-100 text-xs uppercase font-bold tracking-wider ml-1">Sugerencias o Comentarios</label>
                     <textarea id="input-feedback" rows="3"
@@ -185,36 +160,7 @@
             </button>
         </div>
 
-        <!-- VIEW: LOGIN -->
-        <div id="view-login" class="hidden-view w-full max-w-sm bg-black/60 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl animate-fade-in-up">
-            <div class="flex justify-center mb-6">
-                <div class="p-4 bg-cyan-500/10 rounded-full border border-cyan-500/20">
-                    <i data-lucide="lock" class="text-cyan-400 w-8 h-8"></i>
-                </div>
-            </div>
-            <h2 class="text-xl font-bold text-white text-center mb-6">Acceso Administrativo</h2>
-            <form id="form-login" class="space-y-4">
-                <div>
-                    <label class="text-xs text-blue-200 uppercase font-bold tracking-wider ml-1">Contraseña</label>
-                    <input type="password" id="input-password"
-                        class="w-full mt-2 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-400 transition-all text-center tracking-widest"
-                        placeholder="••••••">
-                    <p class="text-[10px] text-white/30 text-center mt-2">Demo: admin</p>
-                </div>
-                <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="switchView('form')"
-                        class="flex-1 py-3 rounded-xl border border-white/10 text-white/70 hover:bg-white/5 transition text-sm font-semibold">
-                        Volver
-                    </button>
-                    <button type="submit"
-                        class="flex-1 py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold shadow-lg transition text-sm">
-                        Entrar
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <!-- VIEW: ADMIN DASHBOARD -->
+        <!-- VIEW: ADMIN DASHBOARD (NO PASSWORD) -->
         <div id="view-admin" class="hidden-view w-full max-w-7xl bg-black/80 backdrop-blur-xl border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl animate-fade-in-up flex flex-col h-[90vh]">
             
             <!-- Admin Header -->
@@ -229,32 +175,32 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap justify-center gap-3 w-full md:w-auto">
-                    <!-- Filter -->
-                    <div class="flex items-center gap-2 bg-black/30 px-3 py-2 rounded-xl border border-white/10">
-                        <i data-lucide="filter" class="text-blue-300 w-4 h-4"></i>
-                        <select id="filter-advisor"
-                            class="bg-transparent text-white text-sm border-none focus:ring-0 cursor-pointer appearance-none pr-4 font-medium outline-none">
-                            <option value="Todos" class="text-black">Todos</option>
-                            <!-- Filter options from JS -->
-                        </select>
+                <div class="flex flex-wrap justify-center gap-3 w-full md:w-auto items-center">
+                    
+                    <!-- NEW FILTER DESIGN -->
+                    <div class="relative group">
+                        <div class="flex items-center gap-3 bg-white/10 px-4 py-2.5 rounded-xl border border-white/10 hover:bg-white/15 transition-all cursor-pointer">
+                            <i data-lucide="filter" class="text-cyan-300 w-4 h-4"></i>
+                            <select id="filter-advisor" class="bg-transparent text-white text-sm border-none focus:ring-0 cursor-pointer appearance-none pr-6 font-semibold outline-none w-full min-w-[140px]">
+                                <option value="Todos" class="text-black font-bold">Todos los Asesores</option>
+                                <!-- Filter options from JS -->
+                            </select>
+                            <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 w-4 h-4 pointer-events-none"></i>
+                        </div>
                     </div>
 
-                    <!-- Share Button (ONLY IN ADMIN) -->
-                    <button onclick="shareSurveyLink()"
-                        class="flex items-center gap-2 px-4 py-2 bg-cyan-600/80 hover:bg-cyan-500 text-white rounded-xl transition text-sm font-bold shadow-lg border border-cyan-500/50">
-                        <i data-lucide="share-2" class="w-4 h-4"></i> <span class="hidden md:inline">Compartir Encuesta</span>
+                    <!-- Share Button -->
+                    <button onclick="shareSurveyLink()" class="flex items-center gap-2 px-4 py-2.5 bg-cyan-600/80 hover:bg-cyan-500 text-white rounded-xl transition text-sm font-bold shadow-lg border border-cyan-500/50">
+                        <i data-lucide="share-2" class="w-4 h-4"></i> <span class="hidden md:inline">Compartir</span>
                     </button>
 
                     <!-- Export -->
-                    <button onclick="exportToExcel()"
-                        class="flex items-center gap-2 px-4 py-2 bg-emerald-600/80 hover:bg-emerald-500 text-white rounded-xl transition text-sm font-bold shadow-lg border border-emerald-500/50">
+                    <button onclick="exportToExcel()" class="flex items-center gap-2 px-4 py-2.5 bg-emerald-600/80 hover:bg-emerald-500 text-white rounded-xl transition text-sm font-bold shadow-lg border border-emerald-500/50">
                         <i data-lucide="download" class="w-4 h-4"></i> <span class="hidden md:inline">Excel</span>
                     </button>
                     
                     <!-- Logout -->
-                    <button onclick="switchView('form')"
-                        class="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/40 text-red-200 rounded-xl transition text-sm border border-red-500/20">
+                    <button onclick="switchView('form')" class="flex items-center gap-2 px-4 py-2.5 bg-red-500/20 hover:bg-red-500/40 text-red-200 rounded-xl transition text-sm border border-red-500/20">
                         <i data-lucide="log-out" class="w-4 h-4"></i>
                     </button>
                 </div>
@@ -280,33 +226,17 @@
 
                 <!-- Charts Area (Grid 2x2 now) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <!-- Chart 1 -->
                     <div class="bg-white/5 border border-white/10 p-5 rounded-2xl backdrop-blur-md">
-                        <h4 class="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2">
-                            <i data-lucide="info" class="text-cyan-400 w-4 h-4"></i> Claridad
-                        </h4>
-                        <div id="chart-clarity" class="space-y-3"></div>
+                        <h4 class="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2"><i data-lucide="info" class="text-cyan-400 w-4 h-4"></i> Claridad</h4><div id="chart-clarity" class="space-y-3"></div>
                     </div>
-                    <!-- Chart 2 -->
                     <div class="bg-white/5 border border-white/10 p-5 rounded-2xl backdrop-blur-md">
-                        <h4 class="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2">
-                            <i data-lucide="check-circle-2" class="text-green-400 w-4 h-4"></i> Decisión
-                        </h4>
-                        <div id="chart-decision" class="space-y-3"></div>
+                        <h4 class="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2"><i data-lucide="check-circle-2" class="text-green-400 w-4 h-4"></i> Decisión</h4><div id="chart-decision" class="space-y-3"></div>
                     </div>
-                    <!-- Chart 3 -->
                     <div class="bg-white/5 border border-white/10 p-5 rounded-2xl backdrop-blur-md">
-                        <h4 class="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2">
-                            <i data-lucide="credit-card" class="text-purple-400 w-4 h-4"></i> Pagos
-                        </h4>
-                        <div id="chart-payment" class="space-y-3"></div>
+                        <h4 class="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2"><i data-lucide="credit-card" class="text-purple-400 w-4 h-4"></i> Pagos</h4><div id="chart-payment" class="space-y-3"></div>
                     </div>
-                    <!-- Chart 4 (New) -->
                     <div class="bg-white/5 border border-white/10 p-5 rounded-2xl backdrop-blur-md">
-                        <h4 class="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2">
-                            <i data-lucide="timer" class="text-orange-400 w-4 h-4"></i> Velocidad
-                        </h4>
-                        <div id="chart-speed" class="space-y-3"></div>
+                        <h4 class="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2"><i data-lucide="timer" class="text-orange-400 w-4 h-4"></i> Velocidad</h4><div id="chart-speed" class="space-y-3"></div>
                     </div>
                 </div>
 
@@ -322,7 +252,7 @@
                                     <th class="p-4 font-semibold">Asesor</th>
                                     <th class="p-4 font-semibold text-center">★</th>
                                     <th class="p-4 font-semibold">Estado</th>
-                                    <th class="p-4 font-semibold">Velocidad</th>
+                                    <th class="p-4 font-semibold">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="table-body" class="divide-y divide-white/5 text-white text-xs md:text-sm">
@@ -337,11 +267,64 @@
 
     </div>
 
+    <!-- MODAL EDITAR -->
+    <div id="modal-edit" class="hidden-view fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/70 modal-blur" onclick="closeEditModal()"></div>
+        <div class="relative bg-slate-900 border border-white/20 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-scale-in">
+            <div class="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <h3 class="text-white font-bold text-lg flex items-center gap-2"><i data-lucide="edit-3" class="text-cyan-400 w-5 h-5"></i> Editar Respuesta</h3>
+                <button onclick="closeEditModal()" class="text-white/50 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="form-edit" class="p-6 space-y-4">
+                <input type="hidden" id="edit-id">
+                
+                <div>
+                    <label class="text-xs text-blue-200 uppercase font-bold tracking-wider">Nombre</label>
+                    <input type="text" id="edit-name" class="w-full mt-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-cyan-400 outline-none">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs text-blue-200 uppercase font-bold tracking-wider">Carrera</label>
+                        <select id="edit-career" class="w-full mt-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-cyan-400 outline-none"></select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-blue-200 uppercase font-bold tracking-wider">Asesor</label>
+                        <select id="edit-advisor" class="w-full mt-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-cyan-400 outline-none"></select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs text-blue-200 uppercase font-bold tracking-wider">Calificación</label>
+                        <select id="edit-rating" class="w-full mt-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-cyan-400 outline-none">
+                            <option value="1">1 Estrella</option>
+                            <option value="2">2 Estrellas</option>
+                            <option value="3">3 Estrellas</option>
+                            <option value="4">4 Estrellas</option>
+                            <option value="5">5 Estrellas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs text-blue-200 uppercase font-bold tracking-wider">Feedback</label>
+                    <textarea id="edit-feedback" rows="3" class="w-full mt-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-cyan-400 outline-none resize-none"></textarea>
+                </div>
+
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="closeEditModal()" class="flex-1 py-2.5 rounded-xl border border-white/10 text-white/70 hover:bg-white/5 font-semibold">Cancelar</button>
+                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-lg">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- FIREBASE & APP LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js";
 
         // --- Configuración ---
@@ -355,22 +338,18 @@
             measurementId: "G-NGKBBFB24C"
         };
 
-        // Init Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         try { const analytics = getAnalytics(app); } catch (e) {}
 
-        // Data Constants
         const CAREERS = [
             'Higiene y Seguridad', 'Gestión Inmobiliaria', 'Administración de Empresas',
             'Ciencia de Datos e Inteligencia Artificial', 'Analista de Sistemas',
             'Recursos Humanos', 'Marketing', 'Desarrollo Web y Aplicaciones Digitales'
         ];
         const ADVISORS = ['Belen', 'Kiara', 'Jeremias', 'Laura', 'No recuerdo'];
-        const ADMIN_PASSWORD = "admin";
-
-        // Icon Helper for Answers
+        
         const getIconForAnswer = (text) => {
             if (!text) return "";
             if (text.includes("Sí") || text.includes("Adecuado") || text.includes("Muy decidido")) return "✅ " + text;
@@ -380,63 +359,47 @@
             return text;
         };
 
-        // Global State
-        let currentUser = null;
         let surveysData = [];
         let currentFilter = "Todos";
 
-        // --- DOM Elements ---
         const views = {
             form: document.getElementById('view-form'),
             success: document.getElementById('view-success'),
-            login: document.getElementById('view-login'),
             admin: document.getElementById('view-admin')
         };
         const headerText = document.getElementById('header-text');
 
-        // --- Initialization ---
         window.switchView = (viewName) => {
-            // Hide all
-            Object.values(views).forEach(el => el.classList.add('hidden-view'));
-            // Show target
-            views[viewName].classList.remove('hidden-view');
-            
-            // Header visibility logic
-            if (viewName === 'form' || viewName === 'success') {
-                headerText.style.display = 'block';
-            } else {
-                headerText.style.display = 'none';
-            }
-
-            // Trigger admin data load
+            Object.values(views).forEach(el => { if(el) el.classList.add('hidden-view'); });
+            if (views[viewName]) views[viewName].classList.remove('hidden-view');
+            if (viewName === 'form' || viewName === 'success') headerText.style.display = 'block';
+            else headerText.style.display = 'none';
             if (viewName === 'admin') loadAdminData();
-
             window.scrollTo(0, 0);
         };
 
         function initForm() {
-            // Check for Admin Mode via URL Parameter (?mode=admin)
             const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('mode') === 'admin') {
-                switchView('login');
-            }
+            if (urlParams.get('mode') === 'admin') switchView('admin');
 
-            // Populate Selects
-            const careerSelect = document.getElementById('input-career');
-            CAREERS.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c; opt.textContent = c; opt.className = "text-white bg-gray-900 py-2";
-                careerSelect.appendChild(opt);
-            });
+            const populate = (id, opts, isEdit) => {
+                const sel = document.getElementById(id);
+                sel.innerHTML = isEdit ? '' : `<option value="" class="text-gray-500 bg-gray-900">${isEdit ? '' : 'Selecciona...'}</option>`;
+                opts.forEach(o => {
+                    const opt = document.createElement('option');
+                    opt.value = o; opt.textContent = o; 
+                    opt.className = isEdit ? "text-white bg-slate-900" : "text-white bg-gray-900 py-2";
+                    sel.appendChild(opt);
+                });
+            };
 
-            const advisorSelect = document.getElementById('input-advisor');
-            ADVISORS.forEach(a => {
-                const opt = document.createElement('option');
-                opt.value = a; opt.textContent = a; opt.className = "text-white bg-gray-900 py-2";
-                advisorSelect.appendChild(opt);
-            });
+            populate('input-career', CAREERS);
+            populate('input-advisor', ADVISORS);
+            
+            // Populate Modal Selects
+            populate('edit-career', CAREERS, true);
+            populate('edit-advisor', ADVISORS, true);
 
-            // Populate Filter Select (Admin)
             const filterSelect = document.getElementById('filter-advisor');
             ADVISORS.forEach(a => {
                 const opt = document.createElement('option');
@@ -448,7 +411,6 @@
                 renderAdminDashboard();
             });
 
-            // Generate Stars
             const starContainer = document.getElementById('star-rating-container');
             for (let i = 1; i <= 5; i++) {
                 const btn = document.createElement('button');
@@ -459,7 +421,6 @@
                 starContainer.appendChild(btn);
             }
 
-            // Generate Radio Groups
             const qContainer = document.getElementById('questions-container');
             const questions = [
                 { id: 'clarity', label: '¿La información sobre la carrera y modalidades fue clara?', opts: ['Sí', 'Parcialmente', 'No'] },
@@ -472,28 +433,19 @@
                 const div = document.createElement('div');
                 div.className = "mb-6 bg-white/5 p-4 md:p-5 rounded-2xl border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors";
                 div.innerHTML = `<label class="block text-white font-medium mb-3 text-sm md:text-base">${q.label}</label>`;
-                
                 const optsDiv = document.createElement('div');
                 optsDiv.className = "flex flex-col gap-2.5";
-                
                 q.opts.forEach(opt => {
                     const label = document.createElement('label');
                     label.className = "flex items-center space-x-3 cursor-pointer group hover:bg-white/5 p-2 rounded-xl transition-all";
-                    label.innerHTML = `
-                        <div class="w-5 h-5 rounded-full border-2 border-white/30 flex items-center justify-center transition-all radio-indicator"></div>
-                        <input type="radio" name="${q.id}" value="${opt}" class="hidden" onchange="updateRadios('${q.id}', this)">
-                        <span class="text-sm md:text-base text-blue-100/70 group-hover:text-blue-100 transition-colors">${opt}</span>
-                    `;
+                    label.innerHTML = `<div class="w-5 h-5 rounded-full border-2 border-white/30 flex items-center justify-center transition-all radio-indicator"></div><input type="radio" name="${q.id}" value="${opt}" class="hidden" onchange="updateRadios('${q.id}', this)"><span class="text-sm md:text-base text-blue-100/70 group-hover:text-blue-100 transition-colors">${opt}</span>`;
                     optsDiv.appendChild(label);
                 });
                 div.appendChild(optsDiv);
                 qContainer.appendChild(div);
             });
-            
             lucide.createIcons();
         }
-
-        // --- Logic Functions ---
 
         window.setRating = (rating) => {
             document.getElementById('input-rating').value = rating;
@@ -514,12 +466,10 @@
         };
 
         window.updateRadios = (groupName, input) => {
-            const allLabels = document.querySelectorAll(`input[name="${groupName}"]`);
-            allLabels.forEach(radio => {
+            document.querySelectorAll(`input[name="${groupName}"]`).forEach(radio => {
                 const container = radio.parentElement;
                 const indicator = container.querySelector('.radio-indicator');
                 const text = container.querySelector('span');
-                
                 if (radio.checked) {
                     indicator.classList.remove('border-white/30');
                     indicator.classList.add('border-cyan-400', 'bg-cyan-400', 'scale-110', 'shadow-[0_0_10px_rgba(34,211,238,0.4)]');
@@ -536,12 +486,10 @@
             });
         };
 
-        // Form Submit
         document.getElementById('view-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const getVal = (id) => document.getElementById(id).value;
             const getRadio = (name) => document.querySelector(`input[name="${name}"]:checked`)?.value;
-
             const data = {
                 name: getVal('input-name'),
                 career: getVal('input-career'),
@@ -554,69 +502,35 @@
                 decision: getRadio('decision'),
                 timestamp: serverTimestamp()
             };
-
             if (!data.rating || !data.career || !data.advisor || !data.clarity) {
                 alert("Por favor completa los campos y selecciona una calificación.");
                 return;
             }
-
             const btn = document.getElementById('btn-submit');
-            btn.textContent = "ENVIANDO...";
-            btn.disabled = true;
-
+            btn.textContent = "ENVIANDO..."; btn.disabled = true;
             try {
                 await addDoc(collection(db, 'cervantes_surveys'), data);
-                // Reset form basic
                 document.getElementById('view-form').reset();
                 setRating(0);
                 document.querySelectorAll('input[type="radio"]').forEach(r => { r.checked = false; updateRadios(r.name, r); });
-                
                 switchView('success');
-            } catch (err) {
-                console.error(err);
-                alert("Error al enviar. Revisa la consola o las reglas de Firebase.");
-            }
-            btn.textContent = "ENVIAR CALIFICACIÓN";
-            btn.disabled = false;
+            } catch (err) { alert("Error al enviar."); }
+            btn.textContent = "ENVIAR CALIFICACIÓN"; btn.disabled = false;
         });
 
-        // Login Admin
-        document.getElementById('form-login').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const pass = document.getElementById('input-password').value;
-            if (pass === ADMIN_PASSWORD) {
-                switchView('admin');
-                document.getElementById('input-password').value = "";
-            } else {
-                alert("Contraseña incorrecta");
-            }
-        });
-
-        // --- Admin Dashboard Logic ---
+        // --- Admin Functions ---
         let unsubscribe = null;
-
         function loadAdminData() {
-            if (unsubscribe) return; // Already listening
-            const q = collection(db, 'cervantes_surveys');
-            
-            unsubscribe = onSnapshot(q, (snapshot) => {
+            if (unsubscribe) return;
+            unsubscribe = onSnapshot(collection(db, 'cervantes_surveys'), (snapshot) => {
                 surveysData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                // Sort by date desc
                 surveysData.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
                 renderAdminDashboard();
-            }, (error) => {
-                console.error("Error fetching data:", error);
-                if(error.code === 'permission-denied') alert("Error de permisos. Verifica 'firestore.rules'.");
             });
         }
 
         function renderAdminDashboard() {
-            // Filter
-            const filtered = currentFilter === "Todos" 
-                ? surveysData 
-                : surveysData.filter(s => s.advisor === currentFilter);
-
-            // KPIs
+            const filtered = currentFilter === "Todos" ? surveysData : surveysData.filter(s => s.advisor === currentFilter);
             const total = filtered.length;
             const avg = total > 0 ? (filtered.reduce((a, b) => a + (b.rating || 0), 0) / total).toFixed(1) : "0.0";
             
@@ -624,112 +538,104 @@
             document.getElementById('stat-avg').textContent = avg;
             document.getElementById('stat-last-feedback').textContent = filtered.length > 0 ? `"${filtered[0].feedback || '...'}"` : "-";
 
-            // Charts Helper
-            const renderChart = (elementId, field, options, colorClass) => {
-                const container = document.getElementById(elementId);
-                container.innerHTML = "";
-                const maxVal = Math.max(...options.map(opt => filtered.filter(f => f[field] === opt).length), 1);
-                
-                options.forEach(opt => {
-                    const count = filtered.filter(f => f[field] === opt).length;
-                    const percent = (count / maxVal) * 100;
-                    
-                    const item = document.createElement('div');
-                    item.className = "relative";
-                    item.innerHTML = `
-                        <div class="flex justify-between text-[10px] md:text-xs text-blue-100 mb-1">
-                            <span class="truncate pr-2">${getIconForAnswer(opt)}</span>
-                            <span class="font-mono">${count}</span>
-                        </div>
-                        <div class="w-full bg-white/5 rounded-full h-2 overflow-hidden">
-                            <div class="h-full rounded-full transition-all duration-1000 ${colorClass}" style="width: ${percent}%"></div>
-                        </div>
-                    `;
-                    container.appendChild(item);
+            const renderChart = (id, field, opts, color) => {
+                const con = document.getElementById(id); con.innerHTML = "";
+                const max = Math.max(...opts.map(o => filtered.filter(f => f[field] === o).length), 1);
+                opts.forEach(o => {
+                    const c = filtered.filter(f => f[field] === o).length;
+                    const p = (c / max) * 100;
+                    con.innerHTML += `<div class="relative"><div class="flex justify-between text-[10px] md:text-xs text-blue-100 mb-1"><span class="truncate pr-2">${getIconForAnswer(o)}</span><span class="font-mono">${c}</span></div><div class="w-full bg-white/5 rounded-full h-2 overflow-hidden"><div class="h-full rounded-full transition-all duration-1000 ${color}" style="width: ${p}%"></div></div></div>`;
                 });
             };
-
             renderChart('chart-clarity', 'clarity', ['Sí', 'Parcialmente', 'No'], 'bg-cyan-500');
             renderChart('chart-decision', 'decision', ['Muy decidido/a', 'Bastante decidido/a', 'Con dudas', 'No estoy interesado/a'], 'bg-green-500');
             renderChart('chart-payment', 'paymentInfo', ['Sí', 'No', 'Me quedaron dudas'], 'bg-purple-500');
             renderChart('chart-speed', 'responseSpeed', ['Muy rápido', 'Adecuado', 'Lento'], 'bg-orange-500');
 
-            // Table
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = "";
-            if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-white/30">No hay datos.</td></tr>`;
-            } else {
+            if (filtered.length === 0) tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-white/30">No hay datos.</td></tr>`;
+            else {
                 filtered.forEach(s => {
                     const date = s.timestamp ? new Date(s.timestamp.seconds * 1000).toLocaleDateString() : '-';
                     const tr = document.createElement('tr');
-                    tr.className = "hover:bg-white/5 transition-colors";
+                    tr.className = "hover:bg-white/5 transition-colors group";
                     tr.innerHTML = `
                         <td class="p-4 whitespace-nowrap opacity-60">${date}</td>
                         <td class="p-4 font-medium">${s.name}</td>
                         <td class="p-4"><span class="px-2 py-1 bg-white/5 rounded text-[10px] border border-white/5">${s.career}</span></td>
                         <td class="p-4 text-cyan-200">${s.advisor}</td>
                         <td class="p-4 text-center font-bold text-yellow-400">${s.rating}</td>
-                        <td class="p-4 opacity-70">${getIconForAnswer(s.decision)}</td>
-                        <td class="p-4 opacity-70">${getIconForAnswer(s.responseSpeed)}</td>
+                        <td class="p-4 opacity-70 text-xs">${getIconForAnswer(s.decision)}</td>
+                        <td class="p-4 flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="window.openEdit('${s.id}')" class="p-2 bg-blue-500/20 hover:bg-blue-500 text-blue-200 hover:text-white rounded-lg transition"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <button onclick="window.deleteSurvey('${s.id}')" class="p-2 bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white rounded-lg transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </td>
                     `;
                     tbody.appendChild(tr);
                 });
+                lucide.createIcons();
             }
         }
 
-        window.exportToExcel = () => {
-            const dataToExport = currentFilter === "Todos" 
-                ? surveysData 
-                : surveysData.filter(s => s.advisor === currentFilter);
-                
-            const formatted = dataToExport.map(item => ({
-                Fecha: item.timestamp ? new Date(item.timestamp.seconds * 1000).toLocaleDateString() : 'N/A',
-                Nombre: item.name,
-                Carrera: item.career,
-                Asesor: item.advisor,
-                'Calificación': item.rating,
-                'Claridad Info': item.clarity,
-                'Explicación Pagos': item.paymentInfo,
-                'Velocidad Respuesta': item.responseSpeed,
-                'Decisión Inscripción': item.decision,
-                'Feedback': item.feedback
-            }));
-
-            const ws = XLSX.utils.json_to_sheet(formatted);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Encuestas");
-            XLSX.writeFile(wb, "Reporte_Satisfaccion_Cervantes.xlsx");
+        // --- Edit / Delete Logic ---
+        window.openEdit = (id) => {
+            const s = surveysData.find(x => x.id === id);
+            if(!s) return;
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-name').value = s.name;
+            document.getElementById('edit-career').value = s.career;
+            document.getElementById('edit-advisor').value = s.advisor;
+            document.getElementById('edit-rating').value = s.rating;
+            document.getElementById('edit-feedback').value = s.feedback || '';
+            document.getElementById('modal-edit').classList.remove('hidden-view');
         };
 
-        window.shareSurveyLink = async () => {
-            const shareData = {
-                title: 'Encuesta de Satisfacción',
-                text: 'Por favor ayúdanos respondiendo esta breve encuesta sobre tu asesoría en Cervantes.',
-                url: window.location.href.split('?')[0] // Clean URL without params
-            };
+        window.closeEditModal = () => document.getElementById('modal-edit').classList.add('hidden-view');
 
+        document.getElementById('form-edit').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const updateData = {
+                name: document.getElementById('edit-name').value,
+                career: document.getElementById('edit-career').value,
+                advisor: document.getElementById('edit-advisor').value,
+                rating: parseInt(document.getElementById('edit-rating').value),
+                feedback: document.getElementById('edit-feedback').value
+            };
             try {
-                if (navigator.share) {
-                    await navigator.share(shareData);
-                } else {
-                    await navigator.clipboard.writeText(shareData.url);
-                    alert("Link copiado: " + shareData.url);
-                }
-            } catch (err) {
-                console.error('Error sharing:', err);
+                await updateDoc(doc(db, "cervantes_surveys", id), updateData);
+                closeEditModal();
+            } catch(err) { alert("Error al actualizar"); }
+        });
+
+        window.deleteSurvey = async (id) => {
+            if(confirm("¿Estás seguro de eliminar esta encuesta? No se puede deshacer.")) {
+                try {
+                    await deleteDoc(doc(db, "cervantes_surveys", id));
+                } catch(err) { alert("Error al eliminar"); }
             }
         };
 
-        // Auth Listener
-        onAuthStateChanged(auth, (user) => {
-            if (!user) signInAnonymously(auth);
-            currentUser = user;
-        });
+        window.exportToExcel = () => {
+            const data = currentFilter === "Todos" ? surveysData : surveysData.filter(s => s.advisor === currentFilter);
+            const ws = XLSX.utils.json_to_sheet(data.map(i => ({
+                Fecha: i.timestamp ? new Date(i.timestamp.seconds*1000).toLocaleDateString() : 'N/A',
+                Nombre: i.name, Carrera: i.career, Asesor: i.advisor, Calificación: i.rating,
+                Claridad: i.clarity, Pagos: i.paymentInfo, Velocidad: i.responseSpeed, Decisión: i.decision, Feedback: i.feedback
+            })));
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Encuestas");
+            XLSX.writeFile(wb, "Reporte_Cervantes.xlsx");
+        };
 
-        // Run Init
+        window.shareSurveyLink = async () => {
+            const url = window.location.href.split('?')[0];
+            if (navigator.share) await navigator.share({ title: 'Encuesta', text: 'Ayúdanos a mejorar', url });
+            else { await navigator.clipboard.writeText(url); alert("Link copiado!"); }
+        };
+
+        onAuthStateChanged(auth, (user) => { if (!user) signInAnonymously(auth); });
         initForm();
-
     </script>
 </body>
 </html>
