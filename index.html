@@ -79,7 +79,7 @@
         <!-- Initial Loader -->
         <div id="view-loading" class="flex flex-col items-center justify-center h-64">
             <span class="loader w-12 h-12 mb-4"></span>
-            <p class="text-cyan-400 font-mono text-sm tracking-widest animate-pulse">CARGANDO SISTEMA...</p>
+            <p class="text-cyan-400 font-mono text-sm tracking-widest animate-pulse mt-4">CONECTANDO A FIREBASE...</p>
         </div>
 
         <!-- VIEW: FORM -->
@@ -128,7 +128,7 @@
                         <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none w-5 h-5"></i>
                     </div>
                     
-                    <!-- Campo adicional para "Otro" Asesor (oculto por defecto) -->
+                    <!-- Campo adicional para "Otro" Asesor -->
                     <div id="container-advisor-other" class="relative hidden-view mt-3 animate-fade-in-up">
                         <i data-lucide="user-plus" class="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-300 w-5 h-5 pointer-events-none"></i>
                         <input type="text" id="input-advisor-other"
@@ -211,7 +211,7 @@
                         </div>
                     </div>
 
-                    <!-- Settings Button (Visible in both admin/view modes as requested) -->
+                    <!-- Settings Button -->
                     <button id="btn-settings" onclick="openSettingsModal()" class="flex items-center gap-2 px-4 py-2.5 bg-slate-700/80 hover:bg-slate-600 text-white rounded-xl transition text-sm font-bold shadow-lg border border-slate-500/50">
                         <i data-lucide="settings" class="w-4 h-4 text-cyan-300"></i> <span class="hidden xl:inline">Configurar</span>
                     </button>
@@ -346,6 +346,20 @@
             </div>
             
             <form id="form-settings" class="p-6 overflow-y-auto flex-1 bg-black/20">
+                <!-- BANNER DE ERROR DE PERMISOS -->
+                <div id="settings-error-banner" class="hidden mb-6 bg-red-500/20 border border-red-500 rounded-xl p-4 text-red-200 text-sm">
+                    <strong>⚠️ Error de Permisos en Firebase:</strong> No puedes guardar cambios porque faltan las Reglas de Seguridad en tu consola de Firebase. Ve a Firestore Database -> Rules y usa estas reglas:<br>
+                    <code class="block mt-2 bg-black/50 p-3 rounded font-mono text-[11px] text-white whitespace-pre-wrap">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true; 
+    }
+  }
+}</code>
+                    <p class="mt-2 text-xs opacity-80">(Nota: Esta regla 'if true' es para pruebas, asegúrate de ajustarla según tu necesidad de seguridad luego).</p>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <!-- Column 1: Basics -->
                     <div class="space-y-6">
@@ -389,7 +403,7 @@
     <!-- FIREBASE & APP LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
         // --- Configuración ---
@@ -409,7 +423,7 @@
         // --- Configuración por Defecto (Fallback) ---
         const DEFAULT_CONFIG = {
             careers: ['Higiene y Seguridad', 'Gestión Inmobiliaria', 'Administración de Empresas', 'Ciencia de Datos e Inteligencia Artificial', 'Analista de Sistemas', 'Recursos Humanos', 'Marketing', 'Desarrollo Web y Aplicaciones Digitales'],
-            advisors: ['Belen', 'Kiara', 'Jeremias', 'Laura', 'Otro'], // Modificado "No recuerdo" por "Otro"
+            advisors: ['Belen', 'Kiara', 'Jeremias', 'Laura', 'Otro'],
             questions: [
                 { id: 'clarity', label: '¿La información sobre la carrera y modalidades fue clara?', opts: ['Sí', 'Parcialmente', 'No'] },
                 { id: 'paymentInfo', label: '¿Te explicaron bien los descuentos y formas de pago?', opts: ['Sí', 'No', 'Me quedaron dudas'] },
@@ -423,7 +437,8 @@
         let currentUser = null;
         let surveysData = [];
         let currentFilter = "Todos";
-        let appMode = 'form'; // 'form', 'admin', 'view'
+        let appMode = 'form'; 
+        let hasPermissionError = false;
 
         // Helper Visual Icons
         const getIconForAnswer = (text) => {
@@ -466,10 +481,14 @@
                     if(!appConfig.advisors) appConfig.advisors = DEFAULT_CONFIG.advisors;
                     if(!appConfig.questions) appConfig.questions = DEFAULT_CONFIG.questions;
                 } else {
-                    await setDoc(docRef, appConfig); // Guarda defaults por primera vez
+                    await setDoc(docRef, appConfig); 
                 }
             } catch (e) {
-                console.error("Usando config por defecto.", e);
+                // Modified console.error to console.warn to avoid Canvas blocking errors
+                console.warn("Aviso: Usando config por defecto debido a permisos de Firestore.", e.message);
+                if (e.code === 'permission-denied' || e.message.includes('permission')) {
+                    hasPermissionError = true;
+                }
             }
         }
 
@@ -478,7 +497,6 @@
             const urlParams = new URLSearchParams(window.location.search);
             const modeParam = urlParams.get('mode');
             
-            // Según tu petición, ambas URL (admin o view) otorgan privilegios completos de configuración y edición en esta versión.
             if (modeParam === 'admin' || modeParam === 'view') {
                 appMode = modeParam;
                 document.getElementById('view-mode-badge').textContent = modeParam === 'admin' ? "MODO EDITOR" : "MODO VISUALIZADOR";
@@ -655,14 +673,20 @@
             try {
                 await addDoc(collection(db, 'cervantes_surveys'), data);
                 
-                // Reiniciar el formulario
                 document.getElementById('view-form').reset();
                 setRating(0);
                 document.querySelectorAll('input[type="radio"]').forEach(r => { r.checked = false; updateRadios(r.name, r); });
                 document.getElementById('container-advisor-other').classList.add('hidden-view');
                 
                 switchView('success');
-            } catch (err) { alert("Error al enviar."); }
+            } catch (err) { 
+                console.warn(err);
+                if (err.code === 'permission-denied') {
+                    alert("Error: Faltan permisos. Por favor, configura las reglas de Firebase.");
+                } else {
+                    alert("Error al enviar la encuesta."); 
+                }
+            }
             btn.textContent = "ENVIAR CALIFICACIÓN"; btn.disabled = false;
         });
 
@@ -674,6 +698,10 @@
                 surveysData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 surveysData.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
                 renderAdminDashboard();
+            }, (error) => {
+                if (error.code === 'permission-denied') {
+                    alert("Error de permisos al leer respuestas. Ajusta las reglas de Firebase.");
+                }
             });
         }
 
@@ -759,7 +787,7 @@
                     opt.className = "text-white bg-slate-900";
                     sel.appendChild(opt);
                 });
-                // Si el valor editado no estaba en la configuración por defecto, lo agrega igual al select
+                // Si el valor editado no estaba en la configuración por defecto
                 if (val && !found) {
                     const opt = document.createElement('option');
                     opt.value = val; opt.textContent = val + " (Personalizado)"; 
@@ -831,6 +859,13 @@
 
         // --- Configuración CMS Logic ---
         window.openSettingsModal = () => {
+            // Mostrar u ocultar banner de advertencia según haya error de permisos o no.
+            if (hasPermissionError) {
+                document.getElementById('settings-error-banner').classList.remove('hidden');
+            } else {
+                document.getElementById('settings-error-banner').classList.add('hidden');
+            }
+
             document.getElementById('settings-careers').value = appConfig.careers.join('\n');
             document.getElementById('settings-advisors').value = appConfig.advisors.join('\n');
             
@@ -887,11 +922,16 @@
 
             try {
                 await setDoc(doc(db, 'cervantes_config', 'main'), appConfig);
+                hasPermissionError = false;
                 closeSettingsModal();
                 initApp(); // Refrescar UI con nueva configuración
             } catch (err) {
-                console.error(err);
-                alert("Error al guardar. Verifica las reglas de Firestore.");
+                console.warn(err);
+                if (err.code === 'permission-denied') {
+                    document.getElementById('settings-error-banner').classList.remove('hidden');
+                } else {
+                    alert("Error al guardar la configuración.");
+                }
             }
             btn.innerHTML = originalText;
             btn.disabled = false;
@@ -927,14 +967,21 @@
             else { await navigator.clipboard.writeText(url); alert("Link copiado!"); }
         };
 
-        // Bootstrap App
-        onAuthStateChanged(auth, async (user) => { 
-            if (!user) {
-                try { await signInAnonymously(auth); } catch (e) { console.error(e); }
+        // Flujo de Autenticación Anónima Robusto
+        async function startAppAuth() {
+            try {
+                await signInAnonymously(auth);
+                await loadSystemConfig();
+                initApp();
+            } catch (error) {
+                console.warn("Aviso de autenticación/configuración:", error.message);
+                // Si falla el logueo, intentamos cargar igual (probablemente falle si las reglas lo exigen)
+                await loadSystemConfig();
+                initApp();
             }
-            await loadSystemConfig();
-            initApp();
-        });
+        }
+
+        startAppAuth();
 
     </script>
 </body>
