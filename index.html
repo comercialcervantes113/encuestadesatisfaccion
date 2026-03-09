@@ -127,6 +127,14 @@
                         </select>
                         <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none w-5 h-5"></i>
                     </div>
+                    
+                    <!-- Campo adicional para "Otro" Asesor (oculto por defecto) -->
+                    <div id="container-advisor-other" class="relative hidden-view mt-3 animate-fade-in-up">
+                        <i data-lucide="user-plus" class="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-300 w-5 h-5 pointer-events-none"></i>
+                        <input type="text" id="input-advisor-other"
+                            class="w-full bg-black/30 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white text-sm placeholder-white/30 focus:outline-none focus:bg-black/50 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all shadow-inner"
+                            placeholder="Escribe el nombre del asesor...">
+                    </div>
                 </div>
             </div>
 
@@ -401,7 +409,7 @@
         // --- Configuración por Defecto (Fallback) ---
         const DEFAULT_CONFIG = {
             careers: ['Higiene y Seguridad', 'Gestión Inmobiliaria', 'Administración de Empresas', 'Ciencia de Datos e Inteligencia Artificial', 'Analista de Sistemas', 'Recursos Humanos', 'Marketing', 'Desarrollo Web y Aplicaciones Digitales'],
-            advisors: ['Belen', 'Kiara', 'Jeremias', 'Laura', 'No recuerdo'],
+            advisors: ['Belen', 'Kiara', 'Jeremias', 'Laura', 'Otro'], // Modificado "No recuerdo" por "Otro"
             questions: [
                 { id: 'clarity', label: '¿La información sobre la carrera y modalidades fue clara?', opts: ['Sí', 'Parcialmente', 'No'] },
                 { id: 'paymentInfo', label: '¿Te explicaron bien los descuentos y formas de pago?', opts: ['Sí', 'No', 'Me quedaron dudas'] },
@@ -493,6 +501,19 @@
 
             populate('input-career', appConfig.careers, "Selecciona la carrera...");
             populate('input-advisor', appConfig.advisors, "¿Quién te atendió?");
+
+            // Evento para mostrar campo extra cuando seleccionan "Otro" en Asesor
+            document.getElementById('input-advisor').addEventListener('change', (e) => {
+                const otherContainer = document.getElementById('container-advisor-other');
+                const otherInput = document.getElementById('input-advisor-other');
+                if (e.target.value === 'Otro') {
+                    otherContainer.classList.remove('hidden-view');
+                    otherInput.required = true;
+                } else {
+                    otherContainer.classList.add('hidden-view');
+                    otherInput.required = false;
+                }
+            });
 
             const filterSelect = document.getElementById('filter-advisor');
             filterSelect.innerHTML = `<option value="Todos" class="text-black font-bold">Todos los Asesores</option>`;
@@ -598,10 +619,20 @@
         // --- Guardar Nueva Encuesta ---
         document.getElementById('view-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // Lógica para capturar el valor de 'Otro' asesor
+            let finalAdvisor = document.getElementById('input-advisor').value;
+            if (finalAdvisor === 'Otro') {
+                const customAdvisor = document.getElementById('input-advisor-other').value.trim();
+                if (customAdvisor) {
+                    finalAdvisor = customAdvisor;
+                }
+            }
+
             const data = {
                 name: document.getElementById('input-name').value,
                 career: document.getElementById('input-career').value,
-                advisor: document.getElementById('input-advisor').value,
+                advisor: finalAdvisor,
                 rating: parseInt(document.getElementById('input-rating').value),
                 feedback: document.getElementById('input-feedback').value,
                 timestamp: serverTimestamp()
@@ -623,9 +654,13 @@
             btn.textContent = "ENVIANDO..."; btn.disabled = true;
             try {
                 await addDoc(collection(db, 'cervantes_surveys'), data);
+                
+                // Reiniciar el formulario
                 document.getElementById('view-form').reset();
                 setRating(0);
                 document.querySelectorAll('input[type="radio"]').forEach(r => { r.checked = false; updateRadios(r.name, r); });
+                document.getElementById('container-advisor-other').classList.add('hidden-view');
+                
                 switchView('success');
             } catch (err) { alert("Error al enviar."); }
             btn.textContent = "ENVIAR CALIFICACIÓN"; btn.disabled = false;
@@ -713,20 +748,29 @@
             if(!s) return;
             
             // Rellenar selects
-            const populate = (idSel, opts, val) => {
+            const populateEdit = (idSel, opts, val) => {
                 const sel = document.getElementById(idSel);
                 sel.innerHTML = `<option value="">Selecciona...</option>`;
+                let found = false;
                 opts.forEach(o => {
                     const opt = document.createElement('option');
                     opt.value = o; opt.textContent = o; 
-                    if(o === val) opt.selected = true;
+                    if(o === val) { opt.selected = true; found = true; }
                     opt.className = "text-white bg-slate-900";
                     sel.appendChild(opt);
                 });
+                // Si el valor editado no estaba en la configuración por defecto, lo agrega igual al select
+                if (val && !found) {
+                    const opt = document.createElement('option');
+                    opt.value = val; opt.textContent = val + " (Personalizado)"; 
+                    opt.selected = true;
+                    opt.className = "text-white bg-slate-900 text-cyan-300";
+                    sel.appendChild(opt);
+                }
             };
 
-            populate('edit-career', appConfig.careers, s.career);
-            populate('edit-advisor', appConfig.advisors, s.advisor);
+            populateEdit('edit-career', appConfig.careers, s.career);
+            populateEdit('edit-advisor', appConfig.advisors, s.advisor);
 
             document.getElementById('edit-id').value = id;
             document.getElementById('edit-name').value = s.name;
