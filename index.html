@@ -43,6 +43,10 @@
         
         /* Modal Blur */
         .modal-blur { backdrop-filter: blur(8px); }
+
+        /* Loader */
+        .loader { border: 3px solid rgba(255,255,255,0.1); border-bottom-color: #22d3ee; border-radius: 50%; display: inline-block; box-sizing: border-box; animation: rotation 1s linear infinite; }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-800 min-h-screen relative overflow-x-hidden selection:bg-cyan-500/30">
@@ -59,11 +63,11 @@
     <div class="relative z-10 container mx-auto px-4 py-8 md:py-12 flex flex-col items-center justify-center min-h-screen">
 
         <!-- Header -->
-        <div id="app-header" class="mb-10 animate-fade-in-down flex flex-col items-center text-center">
+        <div id="app-header" class="mb-10 animate-fade-in-down flex flex-col items-center text-center hidden-view">
             <img src="https://i.postimg.cc/qJpzHLVp/logoic1.png" alt="Cervantes Logo" class="h-24 md:h-32 object-contain drop-shadow-2xl mb-6 hover:scale-105 transition-transform duration-500">
             <div id="header-text">
                 <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-white to-cyan-300 tracking-tight drop-shadow-lg uppercase leading-tight">
-                    Calificá a tu Asesor Comercial
+                    ¿CÓMO FUÉ TU ASESORAMIENTO?
                 </h1>
                 <div class="h-1 w-24 bg-gradient-to-r from-transparent via-cyan-500 to-transparent mt-3 mb-2 opacity-70 mx-auto"></div>
                 <p class="text-blue-200 text-xs md:text-sm font-bold tracking-[0.25em] uppercase text-shadow-sm">
@@ -72,8 +76,14 @@
             </div>
         </div>
 
+        <!-- Initial Loader -->
+        <div id="view-loading" class="flex flex-col items-center justify-center h-64">
+            <span class="loader w-12 h-12 mb-4"></span>
+            <p class="text-cyan-400 font-mono text-sm tracking-widest animate-pulse">CARGANDO SISTEMA...</p>
+        </div>
+
         <!-- VIEW: FORM -->
-        <form id="view-form" class="w-full max-w-2xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-5 md:p-10 shadow-2xl animate-fade-in-up ring-1 ring-white/10 relative overflow-hidden">
+        <form id="view-form" class="hidden-view w-full max-w-2xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-5 md:p-10 shadow-2xl animate-fade-in-up ring-1 ring-white/10 relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
 
             <div class="relative bg-gradient-to-r from-cyan-500/10 to-blue-600/10 -mx-5 -mt-5 md:-mx-10 md:-mt-10 p-6 md:p-8 rounded-t-[2rem] border-b border-white/10 mb-8 flex items-center gap-4">
@@ -102,7 +112,7 @@
                         <i data-lucide="book-open" class="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-300 w-5 h-5 pointer-events-none z-10"></i>
                         <select id="input-career" required
                             class="w-full bg-black/40 border border-white/10 text-white text-sm rounded-xl pl-12 pr-10 py-4 focus:outline-none focus:bg-black/60 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all cursor-pointer shadow-inner">
-                            <option value="" class="text-gray-500 bg-gray-900">Selecciona la carrera...</option>
+                            <!-- Populated by JS -->
                         </select>
                         <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none w-5 h-5"></i>
                     </div>
@@ -113,7 +123,7 @@
                         <i data-lucide="briefcase" class="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-300 w-5 h-5 pointer-events-none z-10"></i>
                         <select id="input-advisor" required
                             class="w-full bg-black/40 border border-white/10 text-white text-sm rounded-xl pl-12 pr-10 py-4 focus:outline-none focus:bg-black/60 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all cursor-pointer shadow-inner">
-                            <option value="" class="text-gray-500 bg-gray-900">¿Quién te atendió?</option>
+                            <!-- Populated by JS -->
                         </select>
                         <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none w-5 h-5"></i>
                     </div>
@@ -130,7 +140,10 @@
                     <div id="star-rating-container" class="flex justify-center space-x-2"></div>
                     <input type="hidden" id="input-rating" value="0">
                 </div>
+                
+                <!-- Dynamic Questions Go Here -->
                 <div id="questions-container"></div>
+                
                 <div class="space-y-2 mt-8">
                     <label class="text-blue-100 text-xs uppercase font-bold tracking-wider ml-1">Sugerencias o Comentarios</label>
                     <textarea id="input-feedback" rows="3"
@@ -179,20 +192,23 @@
                 </div>
 
                 <div class="flex flex-wrap justify-center gap-3 w-full md:w-auto items-center">
-                    
-                    <!-- NEW FILTER DESIGN -->
+                    <!-- Filter -->
                     <div class="relative group">
                         <div class="flex items-center gap-3 bg-white/10 px-4 py-2.5 rounded-xl border border-white/10 hover:bg-white/15 transition-all cursor-pointer">
                             <i data-lucide="filter" class="text-cyan-300 w-4 h-4"></i>
                             <select id="filter-advisor" class="bg-transparent text-white text-sm border-none focus:ring-0 cursor-pointer appearance-none pr-6 font-semibold outline-none w-full min-w-[140px]">
                                 <option value="Todos" class="text-black font-bold">Todos los Asesores</option>
-                                <!-- Filter options from JS -->
                             </select>
                             <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 w-4 h-4 pointer-events-none"></i>
                         </div>
                     </div>
 
-                    <!-- Share Button (Editor & Viewer) -->
+                    <!-- Settings Button (Visible in both admin/view modes as requested) -->
+                    <button id="btn-settings" onclick="openSettingsModal()" class="flex items-center gap-2 px-4 py-2.5 bg-slate-700/80 hover:bg-slate-600 text-white rounded-xl transition text-sm font-bold shadow-lg border border-slate-500/50">
+                        <i data-lucide="settings" class="w-4 h-4 text-cyan-300"></i> <span class="hidden xl:inline">Configurar</span>
+                    </button>
+
+                    <!-- Share -->
                     <button onclick="shareSurveyLink()" class="flex items-center gap-2 px-4 py-2.5 bg-cyan-600/80 hover:bg-cyan-500 text-white rounded-xl transition text-sm font-bold shadow-lg border border-cyan-500/50">
                         <i data-lucide="share-2" class="w-4 h-4"></i> <span class="hidden md:inline">Compartir</span>
                     </button>
@@ -227,20 +243,9 @@
                     </div>
                 </div>
 
-                <!-- Charts Area (Grid 2x2 now) -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <div class="bg-white/5 border border-white/10 p-5 rounded-2xl backdrop-blur-md">
-                        <h4 class="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2"><i data-lucide="info" class="text-cyan-400 w-4 h-4"></i> Claridad</h4><div id="chart-clarity" class="space-y-3"></div>
-                    </div>
-                    <div class="bg-white/5 border border-white/10 p-5 rounded-2xl backdrop-blur-md">
-                        <h4 class="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2"><i data-lucide="check-circle-2" class="text-green-400 w-4 h-4"></i> Decisión</h4><div id="chart-decision" class="space-y-3"></div>
-                    </div>
-                    <div class="bg-white/5 border border-white/10 p-5 rounded-2xl backdrop-blur-md">
-                        <h4 class="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2"><i data-lucide="credit-card" class="text-purple-400 w-4 h-4"></i> Pagos</h4><div id="chart-payment" class="space-y-3"></div>
-                    </div>
-                    <div class="bg-white/5 border border-white/10 p-5 rounded-2xl backdrop-blur-md">
-                        <h4 class="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2"><i data-lucide="timer" class="text-orange-400 w-4 h-4"></i> Velocidad</h4><div id="chart-speed" class="space-y-3"></div>
-                    </div>
+                <!-- Charts Area (Dynamic Grid) -->
+                <div id="charts-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+                    <!-- Charts dynamically injected here based on settings -->
                 </div>
 
                 <!-- Table -->
@@ -248,15 +253,8 @@
                     <div class="overflow-x-auto">
                         <table class="w-full text-left">
                             <thead class="bg-black/40 text-blue-200 text-xs uppercase tracking-wider sticky top-0">
-                                <tr>
-                                    <th class="p-4 font-semibold">Fecha</th>
-                                    <th class="p-4 font-semibold">Inscripto</th>
-                                    <th class="p-4 font-semibold">Carrera</th>
-                                    <th class="p-4 font-semibold">Asesor</th>
-                                    <th class="p-4 font-semibold text-center">★</th>
-                                    <th class="p-4 font-semibold">Estado</th>
-                                    <!-- This header visibility is toggled via JS -->
-                                    <th id="th-actions" class="p-4 font-semibold text-right">Acciones</th>
+                                <tr id="table-headers">
+                                    <!-- Headers dynamically injected here -->
                                 </tr>
                             </thead>
                             <tbody id="table-body" class="divide-y divide-white/5 text-white text-xs md:text-sm">
@@ -271,15 +269,15 @@
 
     </div>
 
-    <!-- MODAL EDITAR -->
+    <!-- MODAL EDITAR RESPUESTA -->
     <div id="modal-edit" class="hidden-view fixed inset-0 z-[60] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/70 modal-blur" onclick="closeEditModal()"></div>
-        <div class="relative bg-slate-900 border border-white/20 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-scale-in">
-            <div class="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+        <div class="relative bg-slate-900 border border-white/20 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden animate-scale-in flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-white/10 flex justify-between items-center bg-white/5 shrink-0">
                 <h3 class="text-white font-bold text-lg flex items-center gap-2"><i data-lucide="edit-3" class="text-cyan-400 w-5 h-5"></i> Editar Respuesta</h3>
-                <button onclick="closeEditModal()" class="text-white/50 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button type="button" onclick="closeEditModal()" class="text-white/50 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <form id="form-edit" class="p-6 space-y-4">
+            <form id="form-edit" class="p-6 space-y-4 overflow-y-auto flex-1">
                 <input type="hidden" id="edit-id">
                 
                 <div>
@@ -311,12 +309,15 @@
                     </div>
                 </div>
 
+                <!-- Dynamic Edit Questions -->
+                <div id="edit-dynamic-questions" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
                 <div>
                     <label class="text-xs text-blue-200 uppercase font-bold tracking-wider">Feedback</label>
                     <textarea id="edit-feedback" rows="3" class="w-full mt-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-cyan-400 outline-none resize-none"></textarea>
                 </div>
 
-                <div class="pt-4 flex gap-3">
+                <div class="pt-4 flex gap-3 sticky bottom-0 bg-slate-900 pb-2">
                     <button type="button" onclick="closeEditModal()" class="flex-1 py-2.5 rounded-xl border border-white/10 text-white/70 hover:bg-white/5 font-semibold">Cancelar</button>
                     <button type="submit" class="flex-1 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-lg">Guardar Cambios</button>
                 </div>
@@ -324,12 +325,64 @@
         </div>
     </div>
 
+    <!-- MODAL CONFIGURACIÓN CMS (SOLO ADMIN) -->
+    <div id="modal-settings" class="hidden-view fixed inset-0 z-[70] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 modal-blur" onclick="closeSettingsModal()"></div>
+        <div class="relative bg-slate-900 border border-white/20 rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden animate-scale-in flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-slate-800 to-slate-900 shrink-0">
+                <div>
+                    <h3 class="text-white font-bold text-xl flex items-center gap-2"><i data-lucide="settings" class="text-cyan-400 w-6 h-6"></i> Configuración del Formulario</h3>
+                    <p class="text-blue-200/60 text-xs">Agrega o elimina carreras, asesores y preguntas dinámicas.</p>
+                </div>
+                <button type="button" onclick="closeSettingsModal()" class="text-white/50 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            
+            <form id="form-settings" class="p-6 overflow-y-auto flex-1 bg-black/20">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Column 1: Basics -->
+                    <div class="space-y-6">
+                        <div class="bg-white/5 p-5 rounded-xl border border-white/10">
+                            <label class="block text-sm text-cyan-300 uppercase font-bold tracking-wider mb-2"><i data-lucide="book-open" class="inline w-4 h-4 mr-1"></i> Carreras Habilitadas</label>
+                            <p class="text-[10px] text-white/50 mb-2">Escribe una carrera por línea.</p>
+                            <textarea id="settings-careers" rows="6" class="w-full bg-black/50 border border-white/20 rounded-lg p-3 text-white text-sm focus:border-cyan-400 outline-none resize-y"></textarea>
+                        </div>
+                        
+                        <div class="bg-white/5 p-5 rounded-xl border border-white/10">
+                            <label class="block text-sm text-cyan-300 uppercase font-bold tracking-wider mb-2"><i data-lucide="users" class="inline w-4 h-4 mr-1"></i> Asesores del Equipo</label>
+                            <p class="text-[10px] text-white/50 mb-2">Escribe un nombre por línea.</p>
+                            <textarea id="settings-advisors" rows="6" class="w-full bg-black/50 border border-white/20 rounded-lg p-3 text-white text-sm focus:border-cyan-400 outline-none resize-y"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Dynamic Questions -->
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <label class="text-sm text-cyan-300 uppercase font-bold tracking-wider"><i data-lucide="list-checks" class="inline w-4 h-4 mr-1"></i> Preguntas de Encuesta</label>
+                            <button type="button" onclick="addQuestionBlock()" class="text-xs bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-200 px-3 py-1 rounded border border-cyan-500/30 transition">+ Agregar</button>
+                        </div>
+                        <p class="text-[10px] text-white/50 mb-4">Define las preguntas de selección múltiple.</p>
+                        
+                        <div id="settings-questions-list" class="space-y-3">
+                            <!-- Question Blocks injected here -->
+                        </div>
+                    </div>
+                </div>
+            </form>
+            
+            <div class="p-4 border-t border-white/10 bg-slate-900 flex justify-end gap-3 shrink-0">
+                <button type="button" onclick="closeSettingsModal()" class="px-6 py-2.5 rounded-xl border border-white/10 text-white/70 hover:bg-white/5 font-semibold transition">Cancelar</button>
+                <button form="form-settings" type="submit" class="px-6 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-lg flex items-center gap-2 transition">
+                    <i data-lucide="save" class="w-4 h-4"></i> Guardar y Aplicar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- FIREBASE & APP LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
         // --- Configuración ---
         const firebaseConfig = {
@@ -338,90 +391,112 @@
             projectId: "encuestadesatisfaccion-b8987",
             storageBucket: "encuestadesatisfaccion-b8987.firebasestorage.app",
             messagingSenderId: "1053389851284",
-            appId: "1:1053389851284:web:23faa57734226919c78281",
-            measurementId: "G-NGKBBFB24C"
+            appId: "1:1053389851284:web:23faa57734226919c78281"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        try { const analytics = getAnalytics(app); } catch (e) {}
 
-        const CAREERS = [
-            'Higiene y Seguridad', 'Gestión Inmobiliaria', 'Administración de Empresas',
-            'Ciencia de Datos e Inteligencia Artificial', 'Analista de Sistemas',
-            'Recursos Humanos', 'Marketing', 'Desarrollo Web y Aplicaciones Digitales'
-        ];
-        const ADVISORS = ['Belen', 'Kiara', 'Jeremias', 'Laura', 'No recuerdo'];
-        
-        const getIconForAnswer = (text) => {
-            if (!text) return "";
-            if (text.includes("Sí") || text.includes("Adecuado") || text.includes("Muy decidido")) return "✅ " + text;
-            if (text.includes("No") || text.includes("Lento") || text.includes("No estoy")) return "❌ " + text;
-            if (text.includes("Parcialmente") || text.includes("dudas") || text.includes("Bastante")) return "⚠️ " + text;
-            if (text.includes("Muy rápido")) return "🚀 " + text;
-            return text;
+        // --- Configuración por Defecto (Fallback) ---
+        const DEFAULT_CONFIG = {
+            careers: ['Higiene y Seguridad', 'Gestión Inmobiliaria', 'Administración de Empresas', 'Ciencia de Datos e Inteligencia Artificial', 'Analista de Sistemas', 'Recursos Humanos', 'Marketing', 'Desarrollo Web y Aplicaciones Digitales'],
+            advisors: ['Belen', 'Kiara', 'Jeremias', 'Laura', 'No recuerdo'],
+            questions: [
+                { id: 'clarity', label: '¿La información sobre la carrera y modalidades fue clara?', opts: ['Sí', 'Parcialmente', 'No'] },
+                { id: 'paymentInfo', label: '¿Te explicaron bien los descuentos y formas de pago?', opts: ['Sí', 'No', 'Me quedaron dudas'] },
+                { id: 'responseSpeed', label: 'Velocidad de respuesta', opts: ['Muy rápido', 'Adecuado', 'Lento'] },
+                { id: 'decision', label: '¿Cómo te sientes respecto a inscribirte?', opts: ['Muy decidido/a', 'Bastante decidido/a', 'Con dudas', 'No estoy interesado/a'] }
+            ]
         };
 
+        // Estado Global
+        let appConfig = { ...DEFAULT_CONFIG };
+        let currentUser = null;
         let surveysData = [];
         let currentFilter = "Todos";
         let appMode = 'form'; // 'form', 'admin', 'view'
 
+        // Helper Visual Icons
+        const getIconForAnswer = (text) => {
+            if (!text) return "-";
+            if (text.includes("Sí") || text.includes("Adecuado") || text.includes("Muy decidido")) return "✅ " + text;
+            if (text.includes("No") || text.includes("Lento") || text.includes("No estoy")) return "❌ " + text;
+            if (text.includes("Parcialmente") || text.includes("dudas") || text.includes("Bastante")) return "⚠️ " + text;
+            if (text.includes("Muy rápido")) return "🚀 " + text;
+            return "💬 " + text;
+        };
+
+        // DOM Views
         const views = {
+            loading: document.getElementById('view-loading'),
             form: document.getElementById('view-form'),
             success: document.getElementById('view-success'),
-            admin: document.getElementById('view-admin')
+            admin: document.getElementById('view-admin'),
+            header: document.getElementById('app-header')
         };
-        const headerText = document.getElementById('header-text');
 
         window.switchView = (viewName) => {
             Object.values(views).forEach(el => { if(el) el.classList.add('hidden-view'); });
             if (views[viewName]) views[viewName].classList.remove('hidden-view');
-            if (viewName === 'form' || viewName === 'success') headerText.style.display = 'block';
-            else headerText.style.display = 'none';
+            
+            if (viewName === 'form' || viewName === 'success') views.header.classList.remove('hidden-view');
+            
             if (viewName === 'admin') loadAdminData();
             window.scrollTo(0, 0);
+            lucide.createIcons();
         };
 
-        function initForm() {
-            // Check for Mode via URL Parameter
+        // --- Cargar Configuración Dinámica ---
+        async function loadSystemConfig() {
+            try {
+                const docRef = doc(db, 'cervantes_config', 'main');
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    appConfig = docSnap.data();
+                    if(!appConfig.careers) appConfig.careers = DEFAULT_CONFIG.careers;
+                    if(!appConfig.advisors) appConfig.advisors = DEFAULT_CONFIG.advisors;
+                    if(!appConfig.questions) appConfig.questions = DEFAULT_CONFIG.questions;
+                } else {
+                    await setDoc(docRef, appConfig); // Guarda defaults por primera vez
+                }
+            } catch (e) {
+                console.error("Usando config por defecto.", e);
+            }
+        }
+
+        // --- Inicializar Aplicación ---
+        function initApp() {
             const urlParams = new URLSearchParams(window.location.search);
             const modeParam = urlParams.get('mode');
             
-            if (modeParam === 'admin') {
-                appMode = 'admin';
-                switchView('admin');
-                document.getElementById('view-mode-badge').textContent = "MODO EDITOR";
-                document.getElementById('view-mode-badge').className = "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-500 text-white";
-                document.getElementById('view-mode-badge').classList.remove('hidden');
-            } else if (modeParam === 'view') {
-                appMode = 'view';
-                switchView('admin');
-                document.getElementById('view-mode-badge').textContent = "MODO VISUALIZADOR";
-                document.getElementById('view-mode-badge').className = "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-500 text-white";
+            // Según tu petición, ambas URL (admin o view) otorgan privilegios completos de configuración y edición en esta versión.
+            if (modeParam === 'admin' || modeParam === 'view') {
+                appMode = modeParam;
+                document.getElementById('view-mode-badge').textContent = modeParam === 'admin' ? "MODO EDITOR" : "MODO VISUALIZADOR";
+                document.getElementById('view-mode-badge').className = `px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${modeParam==='admin'?'bg-red-500':'bg-blue-500'} text-white`;
                 document.getElementById('view-mode-badge').classList.remove('hidden');
             }
 
-            const populate = (id, opts, isEdit) => {
+            // Llenar Selects Básicos
+            const populate = (id, opts, placeholder) => {
                 const sel = document.getElementById(id);
-                sel.innerHTML = isEdit ? '' : `<option value="" class="text-gray-500 bg-gray-900">${isEdit ? '' : 'Selecciona...'}</option>`;
+                if(!sel) return;
+                sel.innerHTML = `<option value="" class="text-gray-500 bg-gray-900">${placeholder}</option>`;
                 opts.forEach(o => {
                     const opt = document.createElement('option');
                     opt.value = o; opt.textContent = o; 
-                    opt.className = isEdit ? "text-white bg-slate-900" : "text-white bg-gray-900 py-2";
+                    opt.className = "text-white bg-gray-900 py-2";
                     sel.appendChild(opt);
                 });
             };
 
-            populate('input-career', CAREERS);
-            populate('input-advisor', ADVISORS);
-            
-            // Populate Modal Selects
-            populate('edit-career', CAREERS, true);
-            populate('edit-advisor', ADVISORS, true);
+            populate('input-career', appConfig.careers, "Selecciona la carrera...");
+            populate('input-advisor', appConfig.advisors, "¿Quién te atendió?");
 
             const filterSelect = document.getElementById('filter-advisor');
-            ADVISORS.forEach(a => {
+            filterSelect.innerHTML = `<option value="Todos" class="text-black font-bold">Todos los Asesores</option>`;
+            appConfig.advisors.forEach(a => {
                 const opt = document.createElement('option');
                 opt.value = a; opt.textContent = a; opt.className = "text-black";
                 filterSelect.appendChild(opt);
@@ -431,7 +506,9 @@
                 renderAdminDashboard();
             });
 
+            // Estrellas
             const starContainer = document.getElementById('star-rating-container');
+            starContainer.innerHTML = '';
             for (let i = 1; i <= 5; i++) {
                 const btn = document.createElement('button');
                 btn.type = "button";
@@ -441,15 +518,10 @@
                 starContainer.appendChild(btn);
             }
 
+            // Preguntas Dinámicas en el Formulario Público
             const qContainer = document.getElementById('questions-container');
-            const questions = [
-                { id: 'clarity', label: '¿La información sobre la carrera y modalidades fue clara?', opts: ['Sí', 'Parcialmente', 'No'] },
-                { id: 'paymentInfo', label: '¿Te explicaron bien los descuentos y formas de pago?', opts: ['Sí', 'No', 'Me quedaron dudas'] },
-                { id: 'responseSpeed', label: 'Velocidad de respuesta', opts: ['Muy rápido', 'Adecuado', 'Lento'] },
-                { id: 'decision', label: '¿Cómo te sientes respecto a inscribirte?', opts: ['Muy decidido/a', 'Bastante decidido/a', 'Con dudas', 'No estoy interesado/a'] }
-            ];
-
-            questions.forEach(q => {
+            qContainer.innerHTML = '';
+            appConfig.questions.forEach(q => {
                 const div = document.createElement('div');
                 div.className = "mb-6 bg-white/5 p-4 md:p-5 rounded-2xl border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors";
                 div.innerHTML = `<label class="block text-white font-medium mb-3 text-sm md:text-base">${q.label}</label>`;
@@ -464,21 +536,42 @@
                 div.appendChild(optsDiv);
                 qContainer.appendChild(div);
             });
+
+            // Preparar Headers de Tabla Dinámica (Dashboard)
+            const tableHeaders = document.getElementById('table-headers');
+            let hHTML = `
+                <th class="p-4 font-semibold">Fecha</th>
+                <th class="p-4 font-semibold">Nombre</th>
+                <th class="p-4 font-semibold">Carrera</th>
+                <th class="p-4 font-semibold">Asesor</th>
+                <th class="p-4 font-semibold text-center">★</th>
+            `;
+            appConfig.questions.slice(0, 2).forEach(q => {
+                hHTML += `<th class="p-4 font-semibold text-xs opacity-80" title="${q.label}">${q.label.substring(0, 15)}...</th>`;
+            });
+            hHTML += `<th id="th-actions" class="p-4 font-semibold text-right">Acciones</th>`;
+            tableHeaders.innerHTML = hHTML;
+
             lucide.createIcons();
+
+            if(appMode === 'admin' || appMode === 'view') {
+                switchView('admin');
+            } else {
+                switchView('form');
+            }
         }
 
+        // --- Helpers del Formulario ---
         window.setRating = (rating) => {
             document.getElementById('input-rating').value = rating;
             const stars = document.querySelectorAll('#star-rating-container button');
             stars.forEach((btn, idx) => {
                 const icon = btn.querySelector('.star-icon');
                 if (idx < rating) {
-                    btn.classList.remove('text-blue-200/20');
-                    btn.classList.add('text-yellow-400', 'drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]');
+                    btn.classList.remove('text-blue-200/20'); btn.classList.add('text-yellow-400', 'drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]');
                     icon.setAttribute('fill', 'currentColor');
                 } else {
-                    btn.classList.add('text-blue-200/20');
-                    btn.classList.remove('text-yellow-400', 'drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]');
+                    btn.classList.add('text-blue-200/20'); btn.classList.remove('text-yellow-400', 'drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]');
                     icon.setAttribute('fill', 'none');
                 }
             });
@@ -491,41 +584,41 @@
                 const indicator = container.querySelector('.radio-indicator');
                 const text = container.querySelector('span');
                 if (radio.checked) {
-                    indicator.classList.remove('border-white/30');
-                    indicator.classList.add('border-cyan-400', 'bg-cyan-400', 'scale-110', 'shadow-[0_0_10px_rgba(34,211,238,0.4)]');
+                    indicator.classList.remove('border-white/30'); indicator.classList.add('border-cyan-400', 'bg-cyan-400', 'scale-110', 'shadow-[0_0_10px_rgba(34,211,238,0.4)]');
                     indicator.innerHTML = '<div class="w-2 h-2 rounded-full bg-white"></div>';
-                    text.classList.add('text-white', 'font-semibold');
-                    text.classList.remove('text-blue-100/70');
+                    text.classList.add('text-white', 'font-semibold'); text.classList.remove('text-blue-100/70');
                 } else {
-                    indicator.classList.add('border-white/30');
-                    indicator.classList.remove('border-cyan-400', 'bg-cyan-400', 'scale-110', 'shadow-[0_0_10px_rgba(34,211,238,0.4)]');
+                    indicator.classList.add('border-white/30'); indicator.classList.remove('border-cyan-400', 'bg-cyan-400', 'scale-110', 'shadow-[0_0_10px_rgba(34,211,238,0.4)]');
                     indicator.innerHTML = '';
-                    text.classList.remove('text-white', 'font-semibold');
-                    text.classList.add('text-blue-100/70');
+                    text.classList.remove('text-white', 'font-semibold'); text.classList.add('text-blue-100/70');
                 }
             });
         };
 
+        // --- Guardar Nueva Encuesta ---
         document.getElementById('view-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const getVal = (id) => document.getElementById(id).value;
-            const getRadio = (name) => document.querySelector(`input[name="${name}"]:checked`)?.value;
             const data = {
-                name: getVal('input-name'),
-                career: getVal('input-career'),
-                advisor: getVal('input-advisor'),
-                rating: parseInt(getVal('input-rating')),
-                feedback: getVal('input-feedback'),
-                clarity: getRadio('clarity'),
-                paymentInfo: getRadio('paymentInfo'),
-                responseSpeed: getRadio('responseSpeed'),
-                decision: getRadio('decision'),
+                name: document.getElementById('input-name').value,
+                career: document.getElementById('input-career').value,
+                advisor: document.getElementById('input-advisor').value,
+                rating: parseInt(document.getElementById('input-rating').value),
+                feedback: document.getElementById('input-feedback').value,
                 timestamp: serverTimestamp()
             };
-            if (!data.rating || !data.career || !data.advisor || !data.clarity) {
-                alert("Por favor completa los campos y selecciona una calificación.");
+            
+            let allAnswered = true;
+            appConfig.questions.forEach(q => {
+                const radio = document.querySelector(`input[name="${q.id}"]:checked`);
+                data[q.id] = radio ? radio.value : '';
+                if(!radio) allAnswered = false;
+            });
+
+            if (!data.rating || !data.career || !data.advisor || !allAnswered) {
+                alert("Por favor completa todos los campos de opciones y selecciona una calificación de estrellas.");
                 return;
             }
+
             const btn = document.getElementById('btn-submit');
             btn.textContent = "ENVIANDO..."; btn.disabled = true;
             try {
@@ -538,11 +631,11 @@
             btn.textContent = "ENVIAR CALIFICACIÓN"; btn.disabled = false;
         });
 
-        // --- Admin Functions ---
-        let unsubscribe = null;
+        // --- Admin Dashboard Logic ---
+        let unsubscribeSurveys = null;
         function loadAdminData() {
-            if (unsubscribe) return;
-            unsubscribe = onSnapshot(collection(db, 'cervantes_surveys'), (snapshot) => {
+            if (unsubscribeSurveys) return;
+            unsubscribeSurveys = onSnapshot(collection(db, 'cervantes_surveys'), (snapshot) => {
                 surveysData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 surveysData.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
                 renderAdminDashboard();
@@ -558,45 +651,41 @@
             document.getElementById('stat-avg').textContent = avg;
             document.getElementById('stat-last-feedback').textContent = filtered.length > 0 ? `"${filtered[0].feedback || '...'}"` : "-";
 
-            // Hide/Show Actions Header based on Mode
-            const actionsHeader = document.getElementById('th-actions');
-            if (appMode === 'view') {
-                actionsHeader.style.display = 'none';
-            } else {
-                actionsHeader.style.display = 'table-cell';
-            }
-
-            const renderChart = (id, field, opts, color) => {
-                const con = document.getElementById(id); con.innerHTML = "";
-                const max = Math.max(...opts.map(o => filtered.filter(f => f[field] === o).length), 1);
-                opts.forEach(o => {
-                    const c = filtered.filter(f => f[field] === o).length;
+            // Generar Gráficos Dinámicos
+            const chartsContainer = document.getElementById('charts-container');
+            chartsContainer.innerHTML = '';
+            const colors = ['bg-cyan-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-rose-500'];
+            
+            appConfig.questions.forEach((q, index) => {
+                const max = Math.max(...q.opts.map(o => filtered.filter(f => f[q.id] === o).length), 1);
+                let barsHTML = '';
+                q.opts.forEach(o => {
+                    const c = filtered.filter(f => f[q.id] === o).length;
                     const p = (c / max) * 100;
-                    con.innerHTML += `<div class="relative"><div class="flex justify-between text-[10px] md:text-xs text-blue-100 mb-1"><span class="truncate pr-2">${getIconForAnswer(o)}</span><span class="font-mono">${c}</span></div><div class="w-full bg-white/5 rounded-full h-2 overflow-hidden"><div class="h-full rounded-full transition-all duration-1000 ${color}" style="width: ${p}%"></div></div></div>`;
+                    barsHTML += `<div class="relative"><div class="flex justify-between text-[10px] md:text-xs text-blue-100 mb-1"><span class="truncate pr-2">${getIconForAnswer(o)}</span><span class="font-mono">${c}</span></div><div class="w-full bg-white/5 rounded-full h-2 overflow-hidden"><div class="h-full rounded-full transition-all duration-1000 ${colors[index % colors.length]}" style="width: ${p}%"></div></div></div>`;
                 });
-            };
-            renderChart('chart-clarity', 'clarity', ['Sí', 'Parcialmente', 'No'], 'bg-cyan-500');
-            renderChart('chart-decision', 'decision', ['Muy decidido/a', 'Bastante decidido/a', 'Con dudas', 'No estoy interesado/a'], 'bg-green-500');
-            renderChart('chart-payment', 'paymentInfo', ['Sí', 'No', 'Me quedaron dudas'], 'bg-purple-500');
-            renderChart('chart-speed', 'responseSpeed', ['Muy rápido', 'Adecuado', 'Lento'], 'bg-orange-500');
+                chartsContainer.innerHTML += `
+                    <div class="bg-white/5 border border-white/10 p-5 rounded-2xl backdrop-blur-md">
+                        <h4 class="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2"><i data-lucide="bar-chart-2" class="text-${colors[index % colors.length].split('-')[1]}-400 w-4 h-4"></i> ${q.label}</h4>
+                        <div class="space-y-3">${barsHTML}</div>
+                    </div>
+                `;
+            });
+            lucide.createIcons();
 
+            // Tabla Dinámica
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = "";
-            if (filtered.length === 0) tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-white/30">No hay datos.</td></tr>`;
-            else {
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-white/30">No hay datos.</td></tr>`;
+            } else {
                 filtered.forEach(s => {
                     const date = s.timestamp ? new Date(s.timestamp.seconds * 1000).toLocaleDateString() : '-';
                     
-                    // Generate Actions Cell only if Admin Mode
-                    let actionsHtml = '';
-                    if (appMode === 'admin') {
-                        actionsHtml = `
-                            <td class="p-4 flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onclick="window.openEdit('${s.id}')" class="p-2 bg-blue-500/20 hover:bg-blue-500 text-blue-200 hover:text-white rounded-lg transition"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                                <button onclick="window.deleteSurvey('${s.id}')" class="p-2 bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white rounded-lg transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                            </td>
-                        `;
-                    }
+                    let dynColsHtml = '';
+                    appConfig.questions.slice(0,2).forEach(q => {
+                        dynColsHtml += `<td class="p-4 opacity-70 text-xs truncate max-w-[120px]" title="${s[q.id]}">${getIconForAnswer(s[q.id])}</td>`;
+                    });
 
                     const tr = document.createElement('tr');
                     tr.className = "hover:bg-white/5 transition-colors group";
@@ -606,8 +695,11 @@
                         <td class="p-4"><span class="px-2 py-1 bg-white/5 rounded text-[10px] border border-white/5">${s.career}</span></td>
                         <td class="p-4 text-cyan-200">${s.advisor}</td>
                         <td class="p-4 text-center font-bold text-yellow-400">${s.rating}</td>
-                        <td class="p-4 opacity-70 text-xs">${getIconForAnswer(s.decision)}</td>
-                        ${actionsHtml}
+                        ${dynColsHtml}
+                        <td class="p-4 flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="window.openEdit('${s.id}')" class="p-2 bg-blue-500/20 hover:bg-blue-500 text-blue-200 hover:text-white rounded-lg transition"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <button onclick="window.deleteSurvey('${s.id}')" class="p-2 bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white rounded-lg transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -615,16 +707,51 @@
             }
         }
 
-        // --- Edit / Delete Logic ---
+        // --- Modals de Edición de Encuestas ---
         window.openEdit = (id) => {
             const s = surveysData.find(x => x.id === id);
             if(!s) return;
+            
+            // Rellenar selects
+            const populate = (idSel, opts, val) => {
+                const sel = document.getElementById(idSel);
+                sel.innerHTML = `<option value="">Selecciona...</option>`;
+                opts.forEach(o => {
+                    const opt = document.createElement('option');
+                    opt.value = o; opt.textContent = o; 
+                    if(o === val) opt.selected = true;
+                    opt.className = "text-white bg-slate-900";
+                    sel.appendChild(opt);
+                });
+            };
+
+            populate('edit-career', appConfig.careers, s.career);
+            populate('edit-advisor', appConfig.advisors, s.advisor);
+
             document.getElementById('edit-id').value = id;
             document.getElementById('edit-name').value = s.name;
-            document.getElementById('edit-career').value = s.career;
-            document.getElementById('edit-advisor').value = s.advisor;
             document.getElementById('edit-rating').value = s.rating;
             document.getElementById('edit-feedback').value = s.feedback || '';
+
+            // Preguntas Dinámicas en Modal de Edición
+            const dynEditContainer = document.getElementById('edit-dynamic-questions');
+            dynEditContainer.innerHTML = '';
+            appConfig.questions.forEach(q => {
+                let optsHtml = `<option value="">Selecciona...</option>`;
+                q.opts.forEach(opt => {
+                    const selected = (s[q.id] === opt) ? 'selected' : '';
+                    optsHtml += `<option value="${opt}" class="text-white bg-slate-900" ${selected}>${opt}</option>`;
+                });
+                dynEditContainer.innerHTML += `
+                    <div>
+                        <label class="text-[10px] text-blue-200 uppercase font-bold tracking-wider">${q.label}</label>
+                        <select id="edit-dyn-${q.id}" class="w-full mt-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-cyan-400 outline-none text-sm">
+                            ${optsHtml}
+                        </select>
+                    </div>
+                `;
+            });
+
             document.getElementById('modal-edit').classList.remove('hidden-view');
         };
 
@@ -640,6 +767,11 @@
                 rating: parseInt(document.getElementById('edit-rating').value),
                 feedback: document.getElementById('edit-feedback').value
             };
+            appConfig.questions.forEach(q => {
+                const sel = document.getElementById(`edit-dyn-${q.id}`);
+                if (sel) updateData[q.id] = sel.value;
+            });
+
             try {
                 await updateDoc(doc(db, "cervantes_surveys", id), updateData);
                 closeEditModal();
@@ -647,21 +779,101 @@
         });
 
         window.deleteSurvey = async (id) => {
-            if(confirm("¿Estás seguro de eliminar esta encuesta? No se puede deshacer.")) {
-                try {
-                    await deleteDoc(doc(db, "cervantes_surveys", id));
-                } catch(err) { alert("Error al eliminar"); }
+            if(confirm("¿Estás seguro de eliminar esta respuesta? No se puede deshacer.")) {
+                try { await deleteDoc(doc(db, "cervantes_surveys", id)); } 
+                catch(err) { alert("Error al eliminar"); }
             }
         };
 
+        // --- Configuración CMS Logic ---
+        window.openSettingsModal = () => {
+            document.getElementById('settings-careers').value = appConfig.careers.join('\n');
+            document.getElementById('settings-advisors').value = appConfig.advisors.join('\n');
+            
+            const qList = document.getElementById('settings-questions-list');
+            qList.innerHTML = '';
+            appConfig.questions.forEach(q => addQuestionBlock(q));
+            
+            document.getElementById('modal-settings').classList.remove('hidden-view');
+        };
+
+        window.closeSettingsModal = () => {
+            document.getElementById('modal-settings').classList.add('hidden-view');
+        };
+
+        window.addQuestionBlock = (q = { id: 'q_' + Date.now(), label: '', opts: [] }) => {
+            const qList = document.getElementById('settings-questions-list');
+            const div = document.createElement('div');
+            div.className = "bg-black/40 p-4 rounded-xl border border-white/10 relative question-block";
+            div.innerHTML = `
+                <button type="button" onclick="this.parentElement.remove()" class="absolute top-2 right-2 text-red-400 hover:text-red-300 transition p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                <input type="hidden" class="q-id" value="${q.id}">
+                <div class="mb-3 pr-6">
+                    <label class="text-[10px] text-cyan-200 uppercase font-bold tracking-wider">Pregunta</label>
+                    <input type="text" class="q-label w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-white text-sm focus:border-cyan-400 outline-none" value="${q.label}" placeholder="Ej: ¿Te explicaron bien?">
+                </div>
+                <div>
+                    <label class="text-[10px] text-cyan-200 uppercase font-bold tracking-wider">Opciones (separadas por coma)</label>
+                    <input type="text" class="q-opts w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-white text-sm focus:border-cyan-400 outline-none" value="${q.opts.join(', ')}" placeholder="Sí, No, Tal vez">
+                </div>
+            `;
+            qList.appendChild(div);
+            lucide.createIcons();
+        };
+
+        document.getElementById('form-settings').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<span class="loader w-4 h-4 mr-2 border-t-transparent border-white"></span> Guardando...`;
+            btn.disabled = true;
+
+            const newCareers = document.getElementById('settings-careers').value.split('\n').map(s => s.trim()).filter(s => s);
+            const newAdvisors = document.getElementById('settings-advisors').value.split('\n').map(s => s.trim()).filter(s => s);
+            
+            const newQuestions = [];
+            document.querySelectorAll('.question-block').forEach(block => {
+                const id = block.querySelector('.q-id').value;
+                const label = block.querySelector('.q-label').value.trim();
+                const opts = block.querySelector('.q-opts').value.split(',').map(s => s.trim()).filter(s => s);
+                if (label && opts.length > 0) newQuestions.push({ id, label, opts });
+            });
+
+            appConfig = { careers: newCareers, advisors: newAdvisors, questions: newQuestions };
+
+            try {
+                await setDoc(doc(db, 'cervantes_config', 'main'), appConfig);
+                closeSettingsModal();
+                initApp(); // Refrescar UI con nueva configuración
+            } catch (err) {
+                console.error(err);
+                alert("Error al guardar. Verifica las reglas de Firestore.");
+            }
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+
+        // --- Exportación e Integración Final ---
         window.exportToExcel = () => {
             const data = currentFilter === "Todos" ? surveysData : surveysData.filter(s => s.advisor === currentFilter);
-            const ws = XLSX.utils.json_to_sheet(data.map(i => ({
-                Fecha: i.timestamp ? new Date(i.timestamp.seconds*1000).toLocaleDateString() : 'N/A',
-                Nombre: i.name, Carrera: i.career, Asesor: i.advisor, Calificación: i.rating,
-                Claridad: i.clarity, Pagos: i.paymentInfo, Velocidad: i.responseSpeed, Decisión: i.decision, Feedback: i.feedback
-            })));
-            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Encuestas");
+            const formatted = data.map(i => {
+                const obj = {
+                    Fecha: i.timestamp ? new Date(i.timestamp.seconds*1000).toLocaleDateString() : 'N/A',
+                    Nombre: i.name,
+                    Carrera: i.career,
+                    Asesor: i.advisor,
+                    Calificación: i.rating
+                };
+                appConfig.questions.forEach(q => {
+                    obj[q.label] = i[q.id] || '';
+                });
+                obj.Feedback = i.feedback || '';
+                return obj;
+            });
+
+            const ws = XLSX.utils.json_to_sheet(formatted);
+            const wb = XLSX.utils.book_new(); 
+            XLSX.utils.book_append_sheet(wb, ws, "Encuestas");
             XLSX.writeFile(wb, "Reporte_Cervantes.xlsx");
         };
 
@@ -671,8 +883,15 @@
             else { await navigator.clipboard.writeText(url); alert("Link copiado!"); }
         };
 
-        onAuthStateChanged(auth, (user) => { if (!user) signInAnonymously(auth); });
-        initForm();
+        // Bootstrap App
+        onAuthStateChanged(auth, async (user) => { 
+            if (!user) {
+                try { await signInAnonymously(auth); } catch (e) { console.error(e); }
+            }
+            await loadSystemConfig();
+            initApp();
+        });
+
     </script>
 </body>
 </html>
