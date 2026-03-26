@@ -1,988 +1,2062 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Encuesta de Satisfacción - Cervantes</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <!-- SheetJS (Excel Export) -->
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Retención de Alumnos - Gestión Estudiantil</title>
+  
+  <!-- Tailwind CSS para los estilos modernos -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Babel para compilar React en el navegador -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- SheetJS para exportar e importar a Excel real (.xlsx) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-    <!-- Custom Styles for Animations & Scrollbars -->
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
-        
-        body { font-family: 'Inter', sans-serif; }
-        
-        /* Animations */
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-        
-        .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
-        .animate-fade-in-down { animation: fadeInDown 0.5s ease-out forwards; }
-        .animate-scale-in { animation: scaleIn 0.3s ease-out forwards; }
-        
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
-
-        /* Custom inputs */
-        input[type="radio"]:checked + div { border-color: #22d3ee; background-color: #22d3ee; }
-        select { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
-        
-        .hidden-view { display: none !important; }
-        
-        /* Modal Blur */
-        .modal-blur { backdrop-filter: blur(8px); }
-
-        /* Loader */
-        .loader { border: 3px solid rgba(255,255,255,0.1); border-bottom-color: #22d3ee; border-radius: 50%; display: inline-block; box-sizing: border-box; animation: rotation 1s linear infinite; }
-        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
-</head>
-<body class="bg-slate-950 text-slate-800 min-h-screen relative overflow-x-hidden selection:bg-cyan-500/30">
-
-    <!-- Background Layers -->
-    <div class="fixed inset-0 z-0 bg-cover bg-center opacity-60" style="background-image: url('https://i.postimg.cc/6wfDzyN9/image.png')"></div>
-    <div class="fixed inset-0 z-0 bg-gradient-to-br from-blue-950 via-blue-900 to-slate-900 mix-blend-multiply opacity-90"></div>
-    <div class="fixed inset-0 z-0 bg-gradient-to-t from-black/80 via-blue-900/20 to-transparent"></div>
-    <div class="fixed inset-0 z-0 flex items-center justify-center opacity-[0.25] pointer-events-none select-none mix-blend-overlay">
-        <img src="https://i.postimg.cc/qJpzHLVp/logoic1.png" class="w-[140vw] max-w-6xl transform -rotate-12 blur-[1px]" alt="Watermark" onerror="this.style.display='none'">
-    </div>
-
-    <!-- Main Container -->
-    <div class="relative z-10 container mx-auto px-4 py-8 md:py-12 flex flex-col items-center justify-center min-h-screen">
-
-        <!-- Header -->
-        <div id="app-header" class="mb-10 animate-fade-in-down flex flex-col items-center text-center hidden-view">
-            <img src="https://i.postimg.cc/qJpzHLVp/logoic1.png" alt="Cervantes Logo" class="h-24 md:h-32 object-contain drop-shadow-2xl mb-6 hover:scale-105 transition-transform duration-500">
-            <div id="header-text">
-                <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-white to-cyan-300 tracking-tight drop-shadow-lg uppercase leading-tight">
-                    ¿CÓMO FUÉ TU ASESORAMIENTO?
-                </h1>
-                <div class="h-1 w-24 bg-gradient-to-r from-transparent via-cyan-500 to-transparent mt-3 mb-2 opacity-70 mx-auto"></div>
-                <p class="text-blue-200 text-xs md:text-sm font-bold tracking-[0.25em] uppercase text-shadow-sm">
-                    Departamento Comercial
-                </p>
-            </div>
-        </div>
-
-        <!-- Initial Loader -->
-        <div id="view-loading" class="flex flex-col items-center justify-center h-64">
-            <span class="loader w-12 h-12 mb-4"></span>
-            <p class="text-cyan-400 font-mono text-sm tracking-widest animate-pulse mt-4">CONECTANDO A FIREBASE...</p>
-        </div>
-
-        <!-- VIEW: FORM -->
-        <form id="view-form" class="hidden-view w-full max-w-2xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-5 md:p-10 shadow-2xl animate-fade-in-up ring-1 ring-white/10 relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
-
-            <div class="relative bg-gradient-to-r from-cyan-500/10 to-blue-600/10 -mx-5 -mt-5 md:-mx-10 md:-mt-10 p-6 md:p-8 rounded-t-[2rem] border-b border-white/10 mb-8 flex items-center gap-4">
-                <div class="p-3 bg-cyan-500/20 rounded-2xl shadow-inner border border-white/10">
-                    <i data-lucide="clipboard-list" class="text-cyan-300 w-7 h-7"></i>
-                </div>
-                <div>
-                    <h3 class="text-white font-bold text-lg md:text-xl">Bienvenido a Cervantes</h3>
-                    <p class="text-blue-200/70 text-xs md:text-sm">Ayudanos a mejorar</p>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 gap-6 mb-8 relative z-10">
-                <div class="space-y-2">
-                    <label class="text-blue-100 text-xs uppercase font-bold tracking-wider ml-1">Nombre Completo</label>
-                    <div class="relative">
-                        <i data-lucide="user" class="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-300 w-5 h-5 pointer-events-none"></i>
-                        <input type="text" id="input-name" required
-                            class="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white text-sm placeholder-white/20 focus:outline-none focus:bg-black/60 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all shadow-inner"
-                            placeholder="Ej: Juan Pérez">
-                    </div>
-                </div>
-                <div class="space-y-2">
-                    <label class="text-blue-100 text-xs uppercase font-bold tracking-wider ml-1">Carrera de Interés</label>
-                    <div class="relative group">
-                        <i data-lucide="book-open" class="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-300 w-5 h-5 pointer-events-none z-10"></i>
-                        <select id="input-career" required
-                            class="w-full bg-black/40 border border-white/10 text-white text-sm rounded-xl pl-12 pr-10 py-4 focus:outline-none focus:bg-black/60 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all cursor-pointer shadow-inner">
-                            <!-- Populated by JS -->
-                        </select>
-                        <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none w-5 h-5"></i>
-                    </div>
-                </div>
-                <div class="space-y-2">
-                    <label class="text-blue-100 text-xs uppercase font-bold tracking-wider ml-1">Asesor/a</label>
-                    <div class="relative group">
-                        <i data-lucide="briefcase" class="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-300 w-5 h-5 pointer-events-none z-10"></i>
-                        <select id="input-advisor" required
-                            class="w-full bg-black/40 border border-white/10 text-white text-sm rounded-xl pl-12 pr-10 py-4 focus:outline-none focus:bg-black/60 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all cursor-pointer shadow-inner">
-                            <!-- Populated by JS -->
-                        </select>
-                        <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none w-5 h-5"></i>
-                    </div>
-                    
-                    <!-- Campo adicional para "Otro" Asesor -->
-                    <div id="container-advisor-other" class="relative hidden-view mt-3 animate-fade-in-up">
-                        <i data-lucide="user-plus" class="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-300 w-5 h-5 pointer-events-none"></i>
-                        <input type="text" id="input-advisor-other"
-                            class="w-full bg-black/30 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white text-sm placeholder-white/30 focus:outline-none focus:bg-black/50 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all shadow-inner"
-                            placeholder="Escribe el nombre del asesor...">
-                    </div>
-                </div>
-            </div>
-
-            <div class="mb-8 relative z-10">
-                <h3 class="text-white font-bold text-lg md:text-xl mb-6 flex items-center gap-2 border-b border-white/10 pb-3">
-                    <i data-lucide="layout-dashboard" class="text-cyan-400 w-5 h-5"></i> Experiencia
-                </h3>
-                <div class="mb-8 text-center bg-gradient-to-b from-white/10 to-transparent p-6 rounded-2xl border border-white/10 ring-1 ring-white/10 hover:ring-cyan-500/30 transition-all group">
-                    <label class="block text-white text-lg font-medium mb-1 group-hover:text-cyan-300 transition-colors">Calificación General</label>
-                    <p class="text-blue-200/60 text-xs mb-4">Toca las estrellas para calificar</p>
-                    <div id="star-rating-container" class="flex justify-center space-x-2"></div>
-                    <input type="hidden" id="input-rating" value="0">
-                </div>
-                
-                <!-- Dynamic Questions Go Here -->
-                <div id="questions-container"></div>
-                
-                <div class="space-y-2 mt-8">
-                    <label class="text-blue-100 text-xs uppercase font-bold tracking-wider ml-1">Sugerencias o Comentarios</label>
-                    <textarea id="input-feedback" rows="3"
-                        class="w-full bg-black/40 border border-white/10 rounded-xl px-5 py-4 text-white placeholder-white/20 focus:outline-none focus:bg-black/60 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all resize-none text-sm"
-                        placeholder="¿En qué podemos mejorar?"></textarea>
-                </div>
-            </div>
-
-            <button type="submit" id="btn-submit"
-                class="relative z-10 w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-5 rounded-xl shadow-lg shadow-cyan-900/40 transform transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-lg tracking-wide uppercase">
-                Enviar Calificación
-            </button>
-        </form>
-
-        <!-- VIEW: SUCCESS -->
-        <div id="view-success" class="hidden-view w-full max-w-lg bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-10 text-center shadow-2xl animate-scale-in">
-            <div class="flex justify-center mb-8">
-                <div class="bg-gradient-to-tr from-green-400 to-green-600 p-5 rounded-full shadow-[0_0_30px_rgba(74,222,128,0.4)] animate-bounce">
-                    <i data-lucide="check-circle" class="text-white w-16 h-16"></i>
-                </div>
-            </div>
-            <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">¡Muchas Gracias!</h2>
-            <p class="text-blue-100 mb-8 leading-relaxed text-lg">Tu opinión es fundamental para nosotros.</p>
-            <button onclick="switchView('form')"
-                class="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-semibold py-4 px-10 rounded-full transition-all hover:scale-105 active:scale-95 hover:shadow-lg backdrop-blur-md">
-                Volver al inicio
-            </button>
-        </div>
-
-        <!-- VIEW: ADMIN DASHBOARD (NO PASSWORD) -->
-        <div id="view-admin" class="hidden-view w-full max-w-7xl bg-black/80 backdrop-blur-xl border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl animate-fade-in-up flex flex-col h-[90vh]">
-            
-            <!-- Admin Header -->
-            <div class="p-6 border-b border-white/10 bg-white/5 flex flex-col xl:flex-row justify-between items-center gap-4">
-                <div class="flex items-center gap-3 w-full md:w-auto">
-                    <div class="bg-cyan-500/20 p-2 rounded-xl">
-                        <i data-lucide="layout-dashboard" class="text-cyan-400 w-6 h-6"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-lg md:text-xl font-bold text-white">Resultados</h2>
-                        <div class="flex items-center gap-2">
-                            <p class="text-blue-200/50 text-xs uppercase tracking-wider">Panel de Control</p>
-                            <span id="view-mode-badge" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider hidden"></span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex flex-wrap justify-center gap-3 w-full md:w-auto items-center">
-                    <!-- Filter -->
-                    <div class="relative group">
-                        <div class="flex items-center gap-3 bg-white/10 px-4 py-2.5 rounded-xl border border-white/10 hover:bg-white/15 transition-all cursor-pointer">
-                            <i data-lucide="filter" class="text-cyan-300 w-4 h-4"></i>
-                            <select id="filter-advisor" class="bg-transparent text-white text-sm border-none focus:ring-0 cursor-pointer appearance-none pr-6 font-semibold outline-none w-full min-w-[140px]">
-                                <option value="Todos" class="text-black font-bold">Todos los Asesores</option>
-                            </select>
-                            <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 w-4 h-4 pointer-events-none"></i>
-                        </div>
-                    </div>
-
-                    <!-- Settings Button -->
-                    <button id="btn-settings" onclick="openSettingsModal()" class="flex items-center gap-2 px-4 py-2.5 bg-slate-700/80 hover:bg-slate-600 text-white rounded-xl transition text-sm font-bold shadow-lg border border-slate-500/50">
-                        <i data-lucide="settings" class="w-4 h-4 text-cyan-300"></i> <span class="hidden xl:inline">Configurar</span>
-                    </button>
-
-                    <!-- Share -->
-                    <button onclick="shareSurveyLink()" class="flex items-center gap-2 px-4 py-2.5 bg-cyan-600/80 hover:bg-cyan-500 text-white rounded-xl transition text-sm font-bold shadow-lg border border-cyan-500/50">
-                        <i data-lucide="share-2" class="w-4 h-4"></i> <span class="hidden md:inline">Compartir</span>
-                    </button>
-
-                    <!-- Export -->
-                    <button onclick="exportToExcel()" class="flex items-center gap-2 px-4 py-2.5 bg-emerald-600/80 hover:bg-emerald-500 text-white rounded-xl transition text-sm font-bold shadow-lg border border-emerald-500/50">
-                        <i data-lucide="download" class="w-4 h-4"></i> <span class="hidden md:inline">Excel</span>
-                    </button>
-                    
-                    <!-- Logout -->
-                    <button onclick="switchView('form')" class="flex items-center gap-2 px-4 py-2.5 bg-red-500/20 hover:bg-red-500/40 text-red-200 rounded-xl transition text-sm border border-red-500/20">
-                        <i data-lucide="log-out" class="w-4 h-4"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="flex-1 overflow-y-auto p-4 md:p-8">
-                
-                <!-- KPIS -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    <div class="bg-white/5 border border-white/10 p-5 rounded-2xl">
-                        <div class="text-blue-200 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Total</div>
-                        <div id="stat-total" class="text-2xl md:text-4xl font-bold text-white">0</div>
-                    </div>
-                    <div class="bg-white/5 border border-white/10 p-5 rounded-2xl">
-                        <div class="text-blue-200 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Promedio</div>
-                        <div id="stat-avg" class="text-2xl md:text-4xl font-bold text-yellow-400">0.0</div>
-                    </div>
-                    <div class="col-span-2 bg-white/5 border border-white/10 p-5 rounded-2xl flex flex-col justify-center">
-                        <div class="text-blue-200 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Último Feedback</div>
-                        <div id="stat-last-feedback" class="text-white text-xs md:text-sm italic truncate opacity-70">-</div>
-                    </div>
-                </div>
-
-                <!-- Charts Area (Dynamic Grid) -->
-                <div id="charts-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
-                    <!-- Charts dynamically injected here based on settings -->
-                </div>
-
-                <!-- Table -->
-                <div class="bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-md">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="bg-black/40 text-blue-200 text-xs uppercase tracking-wider sticky top-0">
-                                <tr id="table-headers">
-                                    <!-- Headers dynamically injected here -->
-                                </tr>
-                            </thead>
-                            <tbody id="table-body" class="divide-y divide-white/5 text-white text-xs md:text-sm">
-                                <!-- Rows filled by JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-    </div>
-
-    <!-- MODAL EDITAR RESPUESTA -->
-    <div id="modal-edit" class="hidden-view fixed inset-0 z-[60] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/70 modal-blur" onclick="closeEditModal()"></div>
-        <div class="relative bg-slate-900 border border-white/20 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden animate-scale-in flex flex-col max-h-[90vh]">
-            <div class="p-6 border-b border-white/10 flex justify-between items-center bg-white/5 shrink-0">
-                <h3 class="text-white font-bold text-lg flex items-center gap-2"><i data-lucide="edit-3" class="text-cyan-400 w-5 h-5"></i> Editar Respuesta</h3>
-                <button type="button" onclick="closeEditModal()" class="text-white/50 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <form id="form-edit" class="p-6 space-y-4 overflow-y-auto flex-1">
-                <input type="hidden" id="edit-id">
-                
-                <div>
-                    <label class="text-xs text-blue-200 uppercase font-bold tracking-wider">Nombre</label>
-                    <input type="text" id="edit-name" class="w-full mt-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-cyan-400 outline-none">
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-xs text-blue-200 uppercase font-bold tracking-wider">Carrera</label>
-                        <select id="edit-career" class="w-full mt-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-cyan-400 outline-none"></select>
-                    </div>
-                    <div>
-                        <label class="text-xs text-blue-200 uppercase font-bold tracking-wider">Asesor</label>
-                        <select id="edit-advisor" class="w-full mt-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-cyan-400 outline-none"></select>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-xs text-blue-200 uppercase font-bold tracking-wider">Calificación</label>
-                        <select id="edit-rating" class="w-full mt-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-cyan-400 outline-none">
-                            <option value="1">1 Estrella</option>
-                            <option value="2">2 Estrellas</option>
-                            <option value="3">3 Estrellas</option>
-                            <option value="4">4 Estrellas</option>
-                            <option value="5">5 Estrellas</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Dynamic Edit Questions -->
-                <div id="edit-dynamic-questions" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-
-                <div>
-                    <label class="text-xs text-blue-200 uppercase font-bold tracking-wider">Feedback</label>
-                    <textarea id="edit-feedback" rows="3" class="w-full mt-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-cyan-400 outline-none resize-none"></textarea>
-                </div>
-
-                <div class="pt-4 flex gap-3 sticky bottom-0 bg-slate-900 pb-2">
-                    <button type="button" onclick="closeEditModal()" class="flex-1 py-2.5 rounded-xl border border-white/10 text-white/70 hover:bg-white/5 font-semibold">Cancelar</button>
-                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-lg">Guardar Cambios</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL CONFIGURACIÓN CMS (SOLO ADMIN) -->
-    <div id="modal-settings" class="hidden-view fixed inset-0 z-[70] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/80 modal-blur" onclick="closeSettingsModal()"></div>
-        <div class="relative bg-slate-900 border border-white/20 rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden animate-scale-in flex flex-col max-h-[90vh]">
-            <div class="p-6 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-slate-800 to-slate-900 shrink-0">
-                <div>
-                    <h3 class="text-white font-bold text-xl flex items-center gap-2"><i data-lucide="settings" class="text-cyan-400 w-6 h-6"></i> Configuración del Formulario</h3>
-                    <p class="text-blue-200/60 text-xs">Agrega o elimina carreras, asesores y preguntas dinámicas.</p>
-                </div>
-                <button type="button" onclick="closeSettingsModal()" class="text-white/50 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
-            </div>
-            
-            <form id="form-settings" class="p-6 overflow-y-auto flex-1 bg-black/20">
-                <!-- BANNER DE ERROR DE PERMISOS -->
-                <div id="settings-error-banner" class="hidden mb-6 bg-red-500/20 border border-red-500 rounded-xl p-4 text-red-200 text-sm">
-                    <strong>⚠️ Error de Permisos en Firebase:</strong> No puedes guardar cambios porque faltan las Reglas de Seguridad en tu consola de Firebase. Ve a Firestore Database -> Rules y usa estas reglas:<br>
-                    <code class="block mt-2 bg-black/50 p-3 rounded font-mono text-[11px] text-white whitespace-pre-wrap">rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true; 
+  <!-- Mapa de Importación para React y Lucide Icons -->
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@18.2.0",
+      "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+      "lucide-react": "https://esm.sh/lucide-react@0.344.0"
     }
   }
-}</code>
-                    <p class="mt-2 text-xs opacity-80">(Nota: Esta regla 'if true' es para pruebas, asegúrate de ajustarla según tu necesidad de seguridad luego).</p>
-                </div>
+  </script>
+  
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800">
+  
+  <div id="root"></div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- Column 1: Basics -->
-                    <div class="space-y-6">
-                        <div class="bg-white/5 p-5 rounded-xl border border-white/10">
-                            <label class="block text-sm text-cyan-300 uppercase font-bold tracking-wider mb-2"><i data-lucide="book-open" class="inline w-4 h-4 mr-1"></i> Carreras Habilitadas</label>
-                            <p class="text-[10px] text-white/50 mb-2">Escribe una carrera por línea.</p>
-                            <textarea id="settings-careers" rows="6" class="w-full bg-black/50 border border-white/20 rounded-lg p-3 text-white text-sm focus:border-cyan-400 outline-none resize-y"></textarea>
-                        </div>
-                        
-                        <div class="bg-white/5 p-5 rounded-xl border border-white/10">
-                            <label class="block text-sm text-cyan-300 uppercase font-bold tracking-wider mb-2"><i data-lucide="users" class="inline w-4 h-4 mr-1"></i> Asesores del Equipo</label>
-                            <p class="text-[10px] text-white/50 mb-2">Escribe un nombre por línea.</p>
-                            <textarea id="settings-advisors" rows="6" class="w-full bg-black/50 border border-white/20 rounded-lg p-3 text-white text-sm focus:border-cyan-400 outline-none resize-y"></textarea>
-                        </div>
-                    </div>
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect, useMemo, useRef } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import { LayoutDashboard, Users, UserPlus, MessageCircle, Phone, Search, Filter, Save, ChevronRight, ArrowLeft, CheckCircle2, AlertCircle, XCircle, Clock, Edit2, Trash2, Archive, Database, Download, Send, User, MessageSquare, PlusCircle, AlertTriangle, Upload, Menu } from 'lucide-react';
+    
+    // --- INTEGRACIÓN DE FIREBASE ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-                    <!-- Column 2: Dynamic Questions -->
-                    <div>
-                        <div class="flex justify-between items-center mb-3">
-                            <label class="text-sm text-cyan-300 uppercase font-bold tracking-wider"><i data-lucide="list-checks" class="inline w-4 h-4 mr-1"></i> Preguntas de Encuesta</label>
-                            <button type="button" onclick="addQuestionBlock()" class="text-xs bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-200 px-3 py-1 rounded border border-cyan-500/30 transition">+ Agregar</button>
-                        </div>
-                        <p class="text-[10px] text-white/50 mb-4">Define las preguntas de selección múltiple.</p>
-                        
-                        <div id="settings-questions-list" class="space-y-3">
-                            <!-- Question Blocks injected here -->
-                        </div>
-                    </div>
-                </div>
-            </form>
-            
-            <div class="p-4 border-t border-white/10 bg-slate-900 flex justify-end gap-3 shrink-0">
-                <button type="button" onclick="closeSettingsModal()" class="px-6 py-2.5 rounded-xl border border-white/10 text-white/70 hover:bg-white/5 font-semibold transition">Cancelar</button>
-                <button form="form-settings" type="submit" class="px-6 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-lg flex items-center gap-2 transition">
-                    <i data-lucide="save" class="w-4 h-4"></i> Guardar y Aplicar
-                </button>
-            </div>
-        </div>
-    </div>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBv_sA7DuRKtbDMjDZJSVgzKdMU0YPzGFM",
+      authDomain: "retencion-47a35.firebaseapp.com",
+      projectId: "retencion-47a35",
+      storageBucket: "retencion-47a35.firebasestorage.app",
+      messagingSenderId: "166511405178",
+      appId: "1:166511405178:web:cf333e09c163fd712bf3c3",
+      measurementId: "G-XKJP1X79T8"
+    };
 
-    <!-- FIREBASE & APP LOGIC -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    const firebaseApp = initializeApp(firebaseConfig);
+    const auth = getAuth(firebaseApp);
+    const db = getFirestore(firebaseApp);
 
-        // --- Configuración ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyBEQEvQl1koLdxXIHqDxtN6rL10_o9eOgY",
-            authDomain: "encuestadesatisfaccion-b8987.firebaseapp.com",
-            projectId: "encuestadesatisfaccion-b8987",
-            storageBucket: "encuestadesatisfaccion-b8987.firebasestorage.app",
-            messagingSenderId: "1053389851284",
-            appId: "1:1053389851284:web:23faa57734226919c78281"
+    // --- CONFIGURACIÓN Y CONSTANTES ---
+    const CAREERS = [
+      { name: 'Administración de Empresas', hex: '#8DA248', modalities: ['Presencial', 'Semipresencial'] },
+      { name: 'Recursos Humanos', hex: '#B388C2', modalities: ['Presencial', 'Semipresencial', 'Distancia'] },
+      { name: 'Marketing', hex: '#FA5D0F', modalities: ['Semipresencial', 'Distancia'] },
+      { name: 'Analista de Sistemas', hex: '#00B1E1', modalities: ['Presencial', 'Semipresencial'] },
+      { name: 'Desarrollo Web', hex: '#A8927D', modalities: ['Semipresencial'] },
+      { name: 'Inteligencia Artificial', hex: '#2D4693', modalities: ['Semipresencial'] },
+      { name: 'Higiene y Seguridad', hex: '#F4C01E', modalities: ['Presencial', 'Semipresencial'] },
+      { name: 'Gestión Inmobiliaria', hex: '#BB242A', modalities: ['Presencial', 'Semipresencial', 'Distancia'] }
+    ];
+
+    const ALL_MODALITIES = ['Presencial', 'Semipresencial', 'Distancia'];
+
+    const MODALITY_RULES = {
+      'Presencial': '3 o 4 días de cursado. Aula híbrida (flexible). Examen final presencial en la institución.',
+      'Semipresencial': '1 vez por semana. Aula híbrida (flexible). Examen final sincrónico con profesor.',
+      'Distancia': 'Contenidos en autogestión/Teams (grabados). Examen sincrónico. Tutorías y 3 encuentros opcionales. Chat con respuesta en 24hs.'
+    };
+
+    const STATUSES = ['Nuevo caso', 'En seguimiento', 'Esperando respuesta', 'Retenido', 'Baja definitiva'];
+    const SUB_STATUSES = [
+      'Solicitud de baja', 
+      'Solicitud de postergar su inicio', 
+      'Detección por mora', 
+      'Detección por inasistencia', 
+      'Detección por otro motivo', 
+      'Derivado a Bienestar', 
+      'Derivado a director de carreras',
+      'Solicita ayuda economica para continuar'
+    ];
+
+    const REASONS = ['Económico', 'Falta de tiempo / Horarios', 'Laboral', 'Académico', 'Personal / Salud', 'Otro'];
+    const STUDENT_TYPES = ['Ingresante', 'Alumno activo', 'Alumno por egresar'];
+    const BAJA_SUBCATEGORIES = ['No quiere seguir en Cervantes', 'Solicita postergar para el próximo inicio', 'Otro'];
+    const NIVELES_CASO = [
+      'Nivel 1 — Riesgo Bajo',
+      'Nivel 2 — Riesgo Medio',
+      'Nivel 3 — Riesgo Crítico',
+      'Nivel 4 — Baja No Económica'
+    ];
+
+    const ADVISORS = [
+      { name: 'Lucas', colorClass: 'bg-blue-100 text-blue-800' },
+      { name: 'Belén', colorClass: 'bg-yellow-100 text-yellow-800' },
+      { name: 'Jeremías', colorClass: 'bg-red-100 text-red-800' },
+      { name: 'Kiara', colorClass: 'bg-purple-100 text-purple-800' },
+      { name: 'Laura', colorClass: 'bg-green-100 text-green-800' }
+    ];
+
+    // --- COMPONENTE PRINCIPAL (APP) ---
+    function App() {
+      const [cases, setCases] = useState([]);
+      const [currentView, setCurrentView] = useState('list'); 
+      const [selectedCaseId, setSelectedCaseId] = useState(null);
+      const [user, setUser] = useState(null);
+      const [loading, setLoading] = useState(true);
+      const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+      // --- ESTADOS PARA EXPORTAR BAJAS ---
+      const [showExportBajasModal, setShowExportBajasModal] = useState(false);
+      const [bajasDateMode, setBajasDateMode] = useState('all'); // 'all' or 'range'
+      const [bajasStartDate, setBajasStartDate] = useState('');
+      const [bajasEndDate, setBajasEndDate] = useState('');
+
+      // Historial de Navegación del Navegador
+      useEffect(() => {
+        const handlePopState = (e) => {
+          if (e.state && e.state.view) {
+            setCurrentView(e.state.view);
+            setSelectedCaseId(e.state.caseId);
+          } else {
+            setCurrentView('list');
+            setSelectedCaseId(null);
+          }
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        window.addEventListener('popstate', handlePopState);
+        window.history.replaceState({ view: 'list', caseId: null }, '', '#list');
+        
+        return () => window.removeEventListener('popstate', handlePopState);
+      }, []);
 
-        // --- Configuración por Defecto (Fallback) ---
-        const DEFAULT_CONFIG = {
-            careers: ['Higiene y Seguridad', 'Gestión Inmobiliaria', 'Administración de Empresas', 'Ciencia de Datos e Inteligencia Artificial', 'Analista de Sistemas', 'Recursos Humanos', 'Marketing', 'Desarrollo Web y Aplicaciones Digitales'],
-            advisors: ['Belen', 'Kiara', 'Jeremias', 'Laura', 'Otro'],
-            questions: [
-                { id: 'clarity', label: '¿La información sobre la carrera y modalidades fue clara?', opts: ['Sí', 'Parcialmente', 'No'] },
-                { id: 'paymentInfo', label: '¿Te explicaron bien los descuentos y formas de pago?', opts: ['Sí', 'No', 'Me quedaron dudas'] },
-                { id: 'responseSpeed', label: 'Velocidad de respuesta', opts: ['Muy rápido', 'Adecuado', 'Lento'] },
-                { id: 'decision', label: '¿Cómo te sientes respecto a inscribirte?', opts: ['Muy decidido/a', 'Bastante decidido/a', 'Con dudas', 'No estoy interesado/a'] }
-            ]
+      useEffect(() => {
+        const initAuth = async () => {
+          try {
+            await signInAnonymously(auth);
+          } catch (error) {
+            console.error("Error al iniciar sesión anónima:", error);
+          }
         };
+        initAuth();
+        const unsubscribe = onAuthStateChanged(auth, setUser);
+        return () => unsubscribe();
+      }, []);
 
-        // Estado Global
-        let appConfig = { ...DEFAULT_CONFIG };
-        let currentUser = null;
-        let surveysData = [];
-        let currentFilter = "Todos";
-        let appMode = 'form'; 
-        let hasPermissionError = false;
+      useEffect(() => {
+        if (!user) return; 
 
-        // Helper Visual Icons
-        const getIconForAnswer = (text) => {
-            if (!text) return "-";
-            if (text.includes("Sí") || text.includes("Adecuado") || text.includes("Muy decidido")) return "✅ " + text;
-            if (text.includes("No") || text.includes("Lento") || text.includes("No estoy")) return "❌ " + text;
-            if (text.includes("Parcialmente") || text.includes("dudas") || text.includes("Bastante")) return "⚠️ " + text;
-            if (text.includes("Muy rápido")) return "🚀 " + text;
-            return "💬 " + text;
-        };
+        const casesRef = collection(db, 'casos');
+        const unsubscribe = onSnapshot(casesRef, (snapshot) => {
+          const data = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          
+          data.sort((a, b) => {
+            const numA = parseInt((a.caseNumber || '').split('-')[1] || '0');
+            const numB = parseInt((b.caseNumber || '').split('-')[1] || '0');
+            return numB - numA;
+          });
 
-        // DOM Views
-        const views = {
-            loading: document.getElementById('view-loading'),
-            form: document.getElementById('view-form'),
-            success: document.getElementById('view-success'),
-            admin: document.getElementById('view-admin'),
-            header: document.getElementById('app-header')
-        };
-
-        window.switchView = (viewName) => {
-            Object.values(views).forEach(el => { if(el) el.classList.add('hidden-view'); });
-            if (views[viewName]) views[viewName].classList.remove('hidden-view');
-            
-            if (viewName === 'form' || viewName === 'success') views.header.classList.remove('hidden-view');
-            
-            if (viewName === 'admin') loadAdminData();
-            window.scrollTo(0, 0);
-            lucide.createIcons();
-        };
-
-        // --- Cargar Configuración Dinámica ---
-        async function loadSystemConfig() {
-            try {
-                const docRef = doc(db, 'cervantes_config', 'main');
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    appConfig = docSnap.data();
-                    if(!appConfig.careers) appConfig.careers = DEFAULT_CONFIG.careers;
-                    if(!appConfig.advisors) appConfig.advisors = DEFAULT_CONFIG.advisors;
-                    if(!appConfig.questions) appConfig.questions = DEFAULT_CONFIG.questions;
-                } else {
-                    await setDoc(docRef, appConfig); 
-                }
-            } catch (e) {
-                // Modified console.error to console.warn to avoid Canvas blocking errors
-                console.warn("Aviso: Usando config por defecto debido a permisos de Firestore.", e.message);
-                if (e.code === 'permission-denied' || e.message.includes('permission')) {
-                    hasPermissionError = true;
-                }
-            }
-        }
-
-        // --- Inicializar Aplicación ---
-        function initApp() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const modeParam = urlParams.get('mode');
-            
-            if (modeParam === 'admin' || modeParam === 'view') {
-                appMode = modeParam;
-                document.getElementById('view-mode-badge').textContent = modeParam === 'admin' ? "MODO EDITOR" : "MODO VISUALIZADOR";
-                document.getElementById('view-mode-badge').className = `px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${modeParam==='admin'?'bg-red-500':'bg-blue-500'} text-white`;
-                document.getElementById('view-mode-badge').classList.remove('hidden');
-            }
-
-            // Llenar Selects Básicos
-            const populate = (id, opts, placeholder) => {
-                const sel = document.getElementById(id);
-                if(!sel) return;
-                sel.innerHTML = `<option value="" class="text-gray-500 bg-gray-900">${placeholder}</option>`;
-                opts.forEach(o => {
-                    const opt = document.createElement('option');
-                    opt.value = o; opt.textContent = o; 
-                    opt.className = "text-white bg-gray-900 py-2";
-                    sel.appendChild(opt);
-                });
-            };
-
-            populate('input-career', appConfig.careers, "Selecciona la carrera...");
-            populate('input-advisor', appConfig.advisors, "¿Quién te atendió?");
-
-            // Evento para mostrar campo extra cuando seleccionan "Otro" en Asesor
-            document.getElementById('input-advisor').addEventListener('change', (e) => {
-                const otherContainer = document.getElementById('container-advisor-other');
-                const otherInput = document.getElementById('input-advisor-other');
-                if (e.target.value === 'Otro') {
-                    otherContainer.classList.remove('hidden-view');
-                    otherInput.required = true;
-                } else {
-                    otherContainer.classList.add('hidden-view');
-                    otherInput.required = false;
-                }
-            });
-
-            const filterSelect = document.getElementById('filter-advisor');
-            filterSelect.innerHTML = `<option value="Todos" class="text-black font-bold">Todos los Asesores</option>`;
-            appConfig.advisors.forEach(a => {
-                const opt = document.createElement('option');
-                opt.value = a; opt.textContent = a; opt.className = "text-black";
-                filterSelect.appendChild(opt);
-            });
-            filterSelect.addEventListener('change', (e) => {
-                currentFilter = e.target.value;
-                renderAdminDashboard();
-            });
-
-            // Estrellas
-            const starContainer = document.getElementById('star-rating-container');
-            starContainer.innerHTML = '';
-            for (let i = 1; i <= 5; i++) {
-                const btn = document.createElement('button');
-                btn.type = "button";
-                btn.className = "transition-all duration-300 hover:scale-125 focus:outline-none text-blue-200/20";
-                btn.innerHTML = `<i data-lucide="star" class="w-10 h-10 star-icon" stroke-width="1.5"></i>`;
-                btn.onclick = () => setRating(i);
-                starContainer.appendChild(btn);
-            }
-
-            // Preguntas Dinámicas en el Formulario Público
-            const qContainer = document.getElementById('questions-container');
-            qContainer.innerHTML = '';
-            appConfig.questions.forEach(q => {
-                const div = document.createElement('div');
-                div.className = "mb-6 bg-white/5 p-4 md:p-5 rounded-2xl border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors";
-                div.innerHTML = `<label class="block text-white font-medium mb-3 text-sm md:text-base">${q.label}</label>`;
-                const optsDiv = document.createElement('div');
-                optsDiv.className = "flex flex-col gap-2.5";
-                q.opts.forEach(opt => {
-                    const label = document.createElement('label');
-                    label.className = "flex items-center space-x-3 cursor-pointer group hover:bg-white/5 p-2 rounded-xl transition-all";
-                    label.innerHTML = `<div class="w-5 h-5 rounded-full border-2 border-white/30 flex items-center justify-center transition-all radio-indicator"></div><input type="radio" name="${q.id}" value="${opt}" class="hidden" onchange="updateRadios('${q.id}', this)"><span class="text-sm md:text-base text-blue-100/70 group-hover:text-blue-100 transition-colors">${opt}</span>`;
-                    optsDiv.appendChild(label);
-                });
-                div.appendChild(optsDiv);
-                qContainer.appendChild(div);
-            });
-
-            // Preparar Headers de Tabla Dinámica (Dashboard)
-            const tableHeaders = document.getElementById('table-headers');
-            let hHTML = `
-                <th class="p-4 font-semibold">Fecha</th>
-                <th class="p-4 font-semibold">Nombre</th>
-                <th class="p-4 font-semibold">Carrera</th>
-                <th class="p-4 font-semibold">Asesor</th>
-                <th class="p-4 font-semibold text-center">★</th>
-            `;
-            appConfig.questions.slice(0, 2).forEach(q => {
-                hHTML += `<th class="p-4 font-semibold text-xs opacity-80" title="${q.label}">${q.label.substring(0, 15)}...</th>`;
-            });
-            hHTML += `<th id="th-actions" class="p-4 font-semibold text-right">Acciones</th>`;
-            tableHeaders.innerHTML = hHTML;
-
-            lucide.createIcons();
-
-            if(appMode === 'admin' || appMode === 'view') {
-                switchView('admin');
-            } else {
-                switchView('form');
-            }
-        }
-
-        // --- Helpers del Formulario ---
-        window.setRating = (rating) => {
-            document.getElementById('input-rating').value = rating;
-            const stars = document.querySelectorAll('#star-rating-container button');
-            stars.forEach((btn, idx) => {
-                const icon = btn.querySelector('.star-icon');
-                if (idx < rating) {
-                    btn.classList.remove('text-blue-200/20'); btn.classList.add('text-yellow-400', 'drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]');
-                    icon.setAttribute('fill', 'currentColor');
-                } else {
-                    btn.classList.add('text-blue-200/20'); btn.classList.remove('text-yellow-400', 'drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]');
-                    icon.setAttribute('fill', 'none');
-                }
-            });
-            lucide.createIcons();
-        };
-
-        window.updateRadios = (groupName, input) => {
-            document.querySelectorAll(`input[name="${groupName}"]`).forEach(radio => {
-                const container = radio.parentElement;
-                const indicator = container.querySelector('.radio-indicator');
-                const text = container.querySelector('span');
-                if (radio.checked) {
-                    indicator.classList.remove('border-white/30'); indicator.classList.add('border-cyan-400', 'bg-cyan-400', 'scale-110', 'shadow-[0_0_10px_rgba(34,211,238,0.4)]');
-                    indicator.innerHTML = '<div class="w-2 h-2 rounded-full bg-white"></div>';
-                    text.classList.add('text-white', 'font-semibold'); text.classList.remove('text-blue-100/70');
-                } else {
-                    indicator.classList.add('border-white/30'); indicator.classList.remove('border-cyan-400', 'bg-cyan-400', 'scale-110', 'shadow-[0_0_10px_rgba(34,211,238,0.4)]');
-                    indicator.innerHTML = '';
-                    text.classList.remove('text-white', 'font-semibold'); text.classList.add('text-blue-100/70');
-                }
-            });
-        };
-
-        // --- Guardar Nueva Encuesta ---
-        document.getElementById('view-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            // Lógica para capturar el valor de 'Otro' asesor
-            let finalAdvisor = document.getElementById('input-advisor').value;
-            if (finalAdvisor === 'Otro') {
-                const customAdvisor = document.getElementById('input-advisor-other').value.trim();
-                if (customAdvisor) {
-                    finalAdvisor = customAdvisor;
-                }
-            }
-
-            const data = {
-                name: document.getElementById('input-name').value,
-                career: document.getElementById('input-career').value,
-                advisor: finalAdvisor,
-                rating: parseInt(document.getElementById('input-rating').value),
-                feedback: document.getElementById('input-feedback').value,
-                timestamp: serverTimestamp()
-            };
-            
-            let allAnswered = true;
-            appConfig.questions.forEach(q => {
-                const radio = document.querySelector(`input[name="${q.id}"]:checked`);
-                data[q.id] = radio ? radio.value : '';
-                if(!radio) allAnswered = false;
-            });
-
-            if (!data.rating || !data.career || !data.advisor || !allAnswered) {
-                alert("Por favor completa todos los campos de opciones y selecciona una calificación de estrellas.");
-                return;
-            }
-
-            const btn = document.getElementById('btn-submit');
-            btn.textContent = "ENVIANDO..."; btn.disabled = true;
-            try {
-                await addDoc(collection(db, 'cervantes_surveys'), data);
-                
-                document.getElementById('view-form').reset();
-                setRating(0);
-                document.querySelectorAll('input[type="radio"]').forEach(r => { r.checked = false; updateRadios(r.name, r); });
-                document.getElementById('container-advisor-other').classList.add('hidden-view');
-                
-                switchView('success');
-            } catch (err) { 
-                console.warn(err);
-                if (err.code === 'permission-denied') {
-                    alert("Error: Faltan permisos. Por favor, configura las reglas de Firebase.");
-                } else {
-                    alert("Error al enviar la encuesta."); 
-                }
-            }
-            btn.textContent = "ENVIAR CALIFICACIÓN"; btn.disabled = false;
+          setCases(data);
+          setLoading(false);
+        }, (error) => {
+          console.error("Error al sincronizar con Firebase:", error);
+          setLoading(false);
         });
 
-        // --- Admin Dashboard Logic ---
-        let unsubscribeSurveys = null;
-        function loadAdminData() {
-            if (unsubscribeSurveys) return;
-            unsubscribeSurveys = onSnapshot(collection(db, 'cervantes_surveys'), (snapshot) => {
-                surveysData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                surveysData.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-                renderAdminDashboard();
-            }, (error) => {
-                if (error.code === 'permission-denied') {
-                    alert("Error de permisos al leer respuestas. Ajusta las reglas de Firebase.");
-                }
-            });
+        return () => unsubscribe();
+      }, [user]);
+
+      // Protección contra borrado cruzado (evita pantalla blanca)
+      useEffect(() => {
+        if (currentView === 'detail' && selectedCaseId && cases.length > 0) {
+          const caseExists = cases.some(c => c.id === selectedCaseId);
+          if (!caseExists) {
+            navigateTo('list');
+          }
+        }
+      }, [cases, currentView, selectedCaseId]);
+
+      const navigateTo = (view, caseId = null) => {
+        window.history.pushState({ view, caseId }, '', `#${view}${caseId ? '/' + caseId : ''}`);
+        setCurrentView(view);
+        setSelectedCaseId(caseId);
+        setIsSidebarOpen(false); 
+      };
+
+      const handleSaveCase = async (newCase) => {
+        try {
+          const cleanCase = { ...newCase };
+          
+          Object.keys(cleanCase).forEach(key => {
+            if (cleanCase[key] === undefined) {
+              delete cleanCase[key];
+            }
+          });
+
+          if (cleanCase.id) {
+            const docRef = doc(db, 'casos', cleanCase.id);
+            const { id, ...caseData } = cleanCase;
+            await updateDoc(docRef, caseData);
+          } else {
+            const casesRef = collection(db, 'casos');
+            const currentCount = cases.length + 1;
+            const caseNumber = `CASO-${String(currentCount).padStart(3, '0')}`;
+            
+            let interacciones = [];
+            if (cleanCase.observacion) {
+              interacciones.push({
+                id: Date.now().toString(),
+                fecha: new Date().toISOString(),
+                texto: cleanCase.observacion,
+                rol: 'sistema' 
+              });
+            }
+
+            const docData = { 
+              ...cleanCase, 
+              caseNumber, 
+              fecha: new Date().toISOString().split('T')[0],
+              interacciones: interacciones
+            };
+            
+            const docRef = await addDoc(casesRef, docData);
+            // Navegar directamente al detalle del caso recién creado
+            navigateTo('detail', docRef.id);
+          }
+        } catch (error) {
+          console.error("Error al guardar en Firebase:", error);
+        }
+      };
+
+      const handleDeleteCase = async (id) => {
+        try {
+          const deletedCase = cases.find(c => c.id === id);
+          if (!deletedCase) return;
+          
+          // Navegación preventiva para evitar pantallazo blanco
+          if (deletedCase.estado === 'Retenido' || deletedCase.estado === 'Baja definitiva') {
+            navigateTo('resolved');
+          } else {
+            navigateTo('list');
+          }
+
+          const docRef = doc(db, 'casos', id);
+          await deleteDoc(docRef);
+        } catch (error) {
+          console.error("Error al eliminar de Firebase:", error);
+        }
+      };
+
+      const handleExportExcel = () => {
+        const dataToExport = cases.map(c => {
+          let historialTxt = '';
+          if (c.interacciones && c.interacciones.length > 0) {
+            historialTxt = c.interacciones.map(i => {
+              const d = new Date(i.fecha);
+              const dateStr = !isNaN(d) ? `${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}` : '';
+              const rol = i.rol === 'indagacion' ? 'INDAGO EL PROBLEMA' : 
+                          i.rol === 'seguimiento' ? 'SEGUIMIENTO Y NEGOCIACIÓN' : 
+                          i.rol === 'cierre' ? 'CIERRE' : 'MOTIVO INICIAL';
+              return `[${dateStr}] ${rol}: ${i.texto}`;
+            }).join(' || ');
+          } else {
+            historialTxt = c.observacion || '';
+          }
+
+          let estadoExport = c.estado;
+          if (c.estado === 'Baja definitiva' && c.detalleBaja) {
+            estadoExport = `Baja definitiva - ${c.tipoBaja || 'NO CONTINUA'} (${c.detalleBaja})`;
+          }
+
+          return {
+            'Nº Caso': c.caseNumber,
+            'Asesor': c.asesor || 'No asignado',
+            'Matrícula': c.matricula,
+            'Nombre': c.nombre,
+            'Teléfono': c.telefono,
+            'Carrera': c.carrera,
+            'Modalidad': c.modalidad || 'No especificada',
+            'Tipo Alumno': c.tipoAlumno && c.tipoAlumno.length > 0 ? c.tipoAlumno.join(', ') : 'No especificado',
+            'Nivel de Caso': c.nivelCaso || 'No especificado',
+            'Motivo Principal': c.motivo,
+            'Estado': estadoExport,
+            'Subestado': c.subestado || 'No especificado',
+            'Empresa Amiga': c.empresaAmiga ? 'Sí' : 'No',
+            'Nombre Empresa': c.nombreEmpresa || '-',
+            'Historial de Observaciones': historialTxt,
+            'Fecha de Registro': c.fecha
+          };
+        });
+
+        const worksheet = window.XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(workbook, worksheet, "Casos Retención");
+        window.XLSX.writeFile(workbook, `Reporte_Retencion_${new Date().toISOString().split('T')[0]}.xlsx`);
+      };
+
+      const handleExportBajas = () => {
+        let filteredBajas = cases.filter(c => c.estado === 'Baja definitiva');
+        
+        if (bajasDateMode === 'range') {
+          if (!bajasStartDate || !bajasEndDate) {
+            alert('Por favor selecciona la fecha de inicio y de fin.');
+            return;
+          }
+          filteredBajas = filteredBajas.filter(c => {
+            return c.fecha >= bajasStartDate && c.fecha <= bajasEndDate;
+          });
         }
 
-        function renderAdminDashboard() {
-            const filtered = currentFilter === "Todos" ? surveysData : surveysData.filter(s => s.advisor === currentFilter);
-            const total = filtered.length;
-            const avg = total > 0 ? (filtered.reduce((a, b) => a + (b.rating || 0), 0) / total).toFixed(1) : "0.0";
-            
-            document.getElementById('stat-total').textContent = total;
-            document.getElementById('stat-avg').textContent = avg;
-            document.getElementById('stat-last-feedback').textContent = filtered.length > 0 ? `"${filtered[0].feedback || '...'}"` : "-";
+        if (filteredBajas.length === 0) {
+          alert('No se encontraron bajas definitivas en el rango seleccionado.');
+          return;
+        }
 
-            // Generar Gráficos Dinámicos
-            const chartsContainer = document.getElementById('charts-container');
-            chartsContainer.innerHTML = '';
-            const colors = ['bg-cyan-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-rose-500'];
-            
-            appConfig.questions.forEach((q, index) => {
-                const max = Math.max(...q.opts.map(o => filtered.filter(f => f[q.id] === o).length), 1);
-                let barsHTML = '';
-                q.opts.forEach(o => {
-                    const c = filtered.filter(f => f[q.id] === o).length;
-                    const p = (c / max) * 100;
-                    barsHTML += `<div class="relative"><div class="flex justify-between text-[10px] md:text-xs text-blue-100 mb-1"><span class="truncate pr-2">${getIconForAnswer(o)}</span><span class="font-mono">${c}</span></div><div class="w-full bg-white/5 rounded-full h-2 overflow-hidden"><div class="h-full rounded-full transition-all duration-1000 ${colors[index % colors.length]}" style="width: ${p}%"></div></div></div>`;
-                });
-                chartsContainer.innerHTML += `
-                    <div class="bg-white/5 border border-white/10 p-5 rounded-2xl backdrop-blur-md">
-                        <h4 class="text-white font-semibold mb-4 text-xs md:text-sm uppercase tracking-wider flex items-center gap-2"><i data-lucide="bar-chart-2" class="text-${colors[index % colors.length].split('-')[1]}-400 w-4 h-4"></i> ${q.label}</h4>
-                        <div class="space-y-3">${barsHTML}</div>
+        const dataToExport = filteredBajas.map(c => {
+          let historialTxt = '';
+          if (c.interacciones && c.interacciones.length > 0) {
+            historialTxt = c.interacciones.map(i => {
+              const d = new Date(i.fecha);
+              const dateStr = !isNaN(d) ? `${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}` : '';
+              const rol = i.rol === 'indagacion' ? 'INDAGO EL PROBLEMA' : 
+                          i.rol === 'seguimiento' ? 'SEGUIMIENTO Y NEGOCIACIÓN' : 
+                          i.rol === 'cierre' ? 'CIERRE' : 'MOTIVO INICIAL';
+              return `[${dateStr}] ${rol}: ${i.texto}`;
+            }).join(' || ');
+          } else {
+            historialTxt = c.observacion || '';
+          }
+
+          const estadoExport = `Baja definitiva - ${c.tipoBaja || 'NO CONTINUA'} (${c.detalleBaja})`;
+
+          return {
+            'Nº Caso': c.caseNumber,
+            'Asesor': c.asesor || 'No asignado',
+            'Matrícula': c.matricula,
+            'Nombre': c.nombre,
+            'Teléfono': c.telefono,
+            'Carrera': c.carrera,
+            'Modalidad': c.modalidad || 'No especificada',
+            'Tipo Alumno': c.tipoAlumno && c.tipoAlumno.length > 0 ? c.tipoAlumno.join(', ') : 'No especificado',
+            'Nivel de Caso': c.nivelCaso || 'No especificado',
+            'Motivo Principal': c.motivo,
+            'Estado Final': estadoExport,
+            'Empresa Amiga': c.empresaAmiga ? 'Sí' : 'No',
+            'Nombre Empresa': c.nombreEmpresa || '-',
+            'Historial de Observaciones': historialTxt,
+            'Fecha de Registro': c.fecha
+          };
+        });
+
+        const worksheet = window.XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(workbook, worksheet, "Bajas");
+        window.XLSX.writeFile(workbook, `Reporte_Bajas_${new Date().toISOString().split('T')[0]}.xlsx`);
+        
+        setShowExportBajasModal(false);
+      };
+
+      const handleImportExcel = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+           try {
+              const data = new Uint8Array(event.target.result);
+              const workbook = window.XLSX.read(data, {type: 'array'});
+              const firstSheetName = workbook.SheetNames[0];
+              const worksheet = workbook.Sheets[firstSheetName];
+              const json = window.XLSX.utils.sheet_to_json(worksheet);
+
+              const casesRef = collection(db, 'casos');
+              let count = cases.length;
+              let importedCount = 0;
+              let skippedCount = 0;
+              
+              // Set de matrículas existentes para no duplicar en la importación
+              const existingMatriculas = new Set(cases.map(c => String(c.matricula || '').trim()).filter(m => m !== ''));
+              
+              for(let row of json) {
+                  const mat = String(row['Matrícula'] || '').trim();
+                  
+                  // Saltar si ya existe la matrícula
+                  if (mat && existingMatriculas.has(mat)) {
+                      skippedCount++;
+                      continue;
+                  }
+                  
+                  // Registrar en el set para evitar duplicados en el mismo archivo excel
+                  if (mat) {
+                      existingMatriculas.add(mat);
+                  }
+
+                  count++;
+                  const caseNumber = row['Nº Caso'] || `CASO-${String(count).padStart(3, '0')}`;
+                  
+                  const newCase = {
+                      caseNumber: caseNumber,
+                      asesor: row['Asesor'] || ADVISORS[0].name,
+                      matricula: mat,
+                      nombre: row['Nombre'] || 'Alumno Importado',
+                      telefono: String(row['Teléfono'] || ''),
+                      carrera: row['Carrera'] || CAREERS[0].name,
+                      modalidad: row['Modalidad'] || 'Presencial',
+                      nivelCaso: row['Nivel de Caso'] || NIVELES_CASO[0],
+                      estado: row['Estado'] && row['Estado'].includes('Baja') ? 'Baja definitiva' : (row['Estado'] || 'Nuevo caso'),
+                      subestado: row['Subestado'] || SUB_STATUSES[0],
+                      motivo: row['Motivo Principal'] || REASONS[0],
+                      empresaAmiga: row['Empresa Amiga'] === 'Sí',
+                      nombreEmpresa: row['Nombre Empresa'] !== '-' ? (row['Nombre Empresa'] || '') : '',
+                      observacion: row['Historial de Observaciones'] || 'Caso importado desde Excel externo.', 
+                      fecha: row['Fecha de Registro'] || new Date().toISOString().split('T')[0],
+                      tipoAlumno: []
+                  }
+                  await addDoc(casesRef, newCase);
+                  importedCount++;
+              }
+              
+              let alertMsg = `¡Se importaron ${importedCount} casos exitosamente!`;
+              if (skippedCount > 0) {
+                 alertMsg += `\nSe omitieron ${skippedCount} casos porque la matrícula ya existía en el sistema.`;
+              }
+              alert(alertMsg);
+
+           } catch(err) {
+              console.error("Error importando:", err);
+              alert("Hubo un error importando el Excel. Revisa el formato de las columnas.");
+           }
+           e.target.value = null; 
+        };
+        reader.readAsArrayBuffer(file);
+      };
+
+      if (loading) {
+        return (
+          <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-indigo-600 font-bold animate-pulse">Conectando con la base de datos...</p>
+            </div>
+          </div>
+        );
+      }
+
+      const activeCases = cases.filter(c => c.estado !== 'Retenido' && c.estado !== 'Baja definitiva');
+      const resolvedCases = cases.filter(c => c.estado === 'Retenido' || c.estado === 'Baja definitiva');
+
+      const MAX_DB_USAGE = 5000;
+      const dbUsagePercent = Math.min((cases.length / MAX_DB_USAGE) * 100, 100);
+
+      const selectedCase = cases.find(c => c.id === selectedCaseId);
+
+      return (
+        <div className="flex h-screen w-full overflow-hidden bg-slate-50">
+          
+          {/* Overlay Móvil */}
+          {isSidebarOpen && (
+            <div 
+              className="fixed inset-0 bg-slate-900/50 z-40 md:hidden" 
+              onClick={() => setIsSidebarOpen(false)}
+            />
+          )}
+
+          {/* Modal Exportar Bajas */}
+          {showExportBajasModal && (
+            <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-fade-in border border-slate-100">
+                <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6 mx-auto border border-red-100">
+                  <Download size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-center text-slate-800 mb-6">Exportar Bajas Definitivas</h3>
+                
+                <div className="space-y-4 mb-8">
+                  <div className="flex gap-4">
+                    <label className={`flex-1 flex items-center justify-center gap-2 cursor-pointer p-3 rounded-xl border transition-colors ${bajasDateMode === 'all' ? 'bg-indigo-50 border-indigo-300 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'}`}>
+                      <input type="radio" checked={bajasDateMode === 'all'} onChange={() => setBajasDateMode('all')} className="hidden" />
+                      <span className="text-sm font-bold">Todas las fechas</span>
+                    </label>
+                    <label className={`flex-1 flex items-center justify-center gap-2 cursor-pointer p-3 rounded-xl border transition-colors ${bajasDateMode === 'range' ? 'bg-indigo-50 border-indigo-300 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'}`}>
+                      <input type="radio" checked={bajasDateMode === 'range'} onChange={() => setBajasDateMode('range')} className="hidden" />
+                      <span className="text-sm font-bold">Rango específico</span>
+                    </label>
+                  </div>
+
+                  {bajasDateMode === 'range' && (
+                    <div className="grid grid-cols-2 gap-3 animate-fade-in pt-2">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-1">Fecha Inicio</label>
+                        <input type="date" className="w-full border border-slate-300 bg-white rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-400 outline-none text-slate-700 font-medium" value={bajasStartDate} onChange={e => setBajasStartDate(e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-1">Fecha Fin</label>
+                        <input type="date" className="w-full border border-slate-300 bg-white rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-400 outline-none text-slate-700 font-medium" value={bajasEndDate} onChange={e => setBajasEndDate(e.target.value)} />
+                      </div>
                     </div>
-                `;
-            });
-            lucide.createIcons();
+                  )}
+                </div>
 
-            // Tabla Dinámica
-            const tbody = document.getElementById('table-body');
-            tbody.innerHTML = "";
-            if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-white/30">No hay datos.</td></tr>`;
-            } else {
-                filtered.forEach(s => {
-                    const date = s.timestamp ? new Date(s.timestamp.seconds * 1000).toLocaleDateString() : '-';
+                <div className="flex gap-3">
+                  <button onClick={() => setShowExportBajasModal(false)} className="flex-1 py-3 px-4 font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors shadow-sm">
+                    Cancelar
+                  </button>
+                  <button onClick={handleExportBajas} className="flex-1 py-3 px-4 font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-sm">
+                    Descargar Bajas
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Sidebar */}
+          <aside className={`w-64 bg-slate-900 text-slate-300 flex flex-col shadow-xl z-50 fixed h-full transition-transform transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative`}>
+            <div className="p-6 border-b border-slate-800/50">
+              <div className="flex items-center gap-3">
+                <img src="https://i.ibb.co/4nqvFQGM/logo.png" alt="Logo Cervantes" className="h-10 object-contain drop-shadow-sm" />
+                <h1 className="text-sm font-bold text-white leading-tight uppercase tracking-wider">
+                  Retención de<br/>Alumnos
+                </h1>
+              </div>
+            </div>
+            
+            <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto custom-scrollbar">
+              <button 
+                onClick={() => navigateTo('list')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'list' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 hover:text-white'}`}
+              >
+                <Users size={20} /> Casos Activos
+                {activeCases.length > 0 && <span className="ml-auto bg-indigo-800 text-xs px-2 py-0.5 rounded-full">{activeCases.length}</span>}
+              </button>
+              <button 
+                onClick={() => navigateTo('resolved')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'resolved' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 hover:text-white'}`}
+              >
+                <CheckCircle2 size={20} /> Resueltos
+                {resolvedCases.length > 0 && <span className="ml-auto bg-slate-800 text-xs px-2 py-0.5 rounded-full">{resolvedCases.length}</span>}
+              </button>
+              <button 
+                onClick={() => navigateTo('new')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'new' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 hover:text-white'}`}
+              >
+                <UserPlus size={20} /> Registrar Caso
+              </button>
+              <button 
+                onClick={() => navigateTo('dashboard')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'dashboard' ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 hover:text-white'}`}
+              >
+                <LayoutDashboard size={20} /> Dashboard
+              </button>
+              
+              <div className="pt-6 pb-2 space-y-2">
+                <div className="border-t border-slate-700/50 mb-4"></div>
+                <button 
+                  onClick={handleExportExcel}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-colors bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white border border-emerald-600/30"
+                >
+                  <Download size={18} /> Exportar Todos
+                </button>
+                <button 
+                  onClick={() => setShowExportBajasModal(true)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-colors bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white border border-red-600/30"
+                >
+                  <Download size={18} /> Exportar Bajas
+                </button>
+                <label className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-colors bg-slate-800/50 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700 cursor-pointer">
+                  <Upload size={18} /> Importar Excel
+                  <input type="file" accept=".xlsx, .xls, .csv" className="hidden" onChange={handleImportExcel} />
+                </label>
+              </div>
+            </nav>
+
+            <div className="p-4 mt-auto border-t border-slate-800">
+              <div className="bg-slate-800/50 p-4 rounded-xl shadow-inner">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5"><Database size={14}/> Uso Base de Datos</span>
+                  <span className="text-xs text-slate-300 font-mono font-bold">{cases.length} <span className="text-slate-500 font-normal">/ {MAX_DB_USAGE}</span></span>
+                </div>
+                <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-700">
+                  <div 
+                    className={`h-full transition-all duration-1000 ${dbUsagePercent > 85 ? 'bg-red-500' : dbUsagePercent > 60 ? 'bg-amber-500' : 'bg-emerald-500'}`} 
+                    style={{ width: `${dbUsagePercent}%` }}
+                  ></div>
+                </div>
+                <p className="text-[10px] text-slate-500 mt-2 leading-tight">Mide la cantidad de registros en la capa gratuita en la nube.</p>
+              </div>
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <main className="flex-1 overflow-y-auto relative w-full h-full custom-scrollbar">
+            <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 p-4 md:p-6 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+              <div className="flex items-center gap-3">
+                <button 
+                  className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                  onClick={() => setIsSidebarOpen(true)}
+                >
+                  <Menu size={24} />
+                </button>
+                <h2 className="text-xl md:text-2xl font-semibold text-slate-800 capitalize truncate">
+                  {currentView === 'dashboard' && 'Panel de Control Global'}
+                  {currentView === 'list' && 'Directorio de Casos Activos'}
+                  {currentView === 'resolved' && 'Historial de Casos Resueltos'}
+                  {currentView === 'new' && 'Registrar Nuevo Caso'}
+                  {currentView === 'detail' && 'Detalle y Seguimiento del Caso'}
+                </h2>
+              </div>
+            </header>
+
+            <div className="p-4 md:p-8 relative z-10">
+              {currentView === 'dashboard' && <Dashboard cases={cases} />}
+              {currentView === 'list' && <CaseList cases={activeCases} allCases={cases} onSelect={(id) => navigateTo('detail', id)} title="Casos Activos (En Gestión)" emptyMsg="No hay casos activos. Todos los registros están resueltos o no hay datos." />}
+              {currentView === 'resolved' && <CaseList cases={resolvedCases} allCases={cases} onSelect={(id) => navigateTo('detail', id)} title="Casos Cerrados (Retenidos y Bajas)" emptyMsg="Aún no hay casos resueltos." />}
+              {currentView === 'new' && (
+                <CaseForm 
+                  cases={cases}
+                  onSave={handleSaveCase} 
+                  onCancel={() => navigateTo('list')} 
+                  onOpenCase={(id) => navigateTo('detail', id)}
+                />
+              )}
+              {currentView === 'detail' && selectedCase && (
+                <CaseDetail 
+                  caseData={selectedCase} 
+                  onBack={() => {
+                    if (selectedCase.estado === 'Retenido' || selectedCase.estado === 'Baja definitiva') navigateTo('resolved');
+                    else navigateTo('list');
+                  }} 
+                  onUpdate={async (updatedCase) => {
+                    const docRef = doc(db, 'casos', updatedCase.id);
+                    const { id, ...caseData } = updatedCase;
                     
-                    let dynColsHtml = '';
-                    appConfig.questions.slice(0,2).forEach(q => {
-                        dynColsHtml += `<td class="p-4 opacity-70 text-xs truncate max-w-[120px]" title="${s[q.id]}">${getIconForAnswer(s[q.id])}</td>`;
+                    Object.keys(caseData).forEach(key => {
+                      if (caseData[key] === undefined) delete caseData[key];
                     });
 
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-white/5 transition-colors group";
-                    tr.innerHTML = `
-                        <td class="p-4 whitespace-nowrap opacity-60">${date}</td>
-                        <td class="p-4 font-medium">${s.name}</td>
-                        <td class="p-4"><span class="px-2 py-1 bg-white/5 rounded text-[10px] border border-white/5">${s.career}</span></td>
-                        <td class="p-4 text-cyan-200">${s.advisor}</td>
-                        <td class="p-4 text-center font-bold text-yellow-400">${s.rating}</td>
-                        ${dynColsHtml}
-                        <td class="p-4 flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onclick="window.openEdit('${s.id}')" class="p-2 bg-blue-500/20 hover:bg-blue-500 text-blue-200 hover:text-white rounded-lg transition"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                            <button onclick="window.deleteSurvey('${s.id}')" class="p-2 bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white rounded-lg transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-                lucide.createIcons();
-            }
-        }
+                    await updateDoc(docRef, caseData);
+                  }}
+                  onDelete={handleDeleteCase}
+                />
+              )}
+            </div>
+          </main>
+        </div>
+      );
+    }
 
-        // --- Modals de Edición de Encuestas ---
-        window.openEdit = (id) => {
-            const s = surveysData.find(x => x.id === id);
-            if(!s) return;
+    // --- DASHBOARD COMPONENT ---
+    function Dashboard({ cases }) {
+      const [filterCareer, setFilterCareer] = useState('');
+      const [filterReason, setFilterReason] = useState('');
+      const [filterStatus, setFilterStatus] = useState('');
+      const [filterSubstatus, setFilterSubstatus] = useState('');
+      const [filterModalidad, setFilterModalidad] = useState('');
+      const [filterNivel, setFilterNivel] = useState('');
+      const [filterAsesor, setFilterAsesor] = useState('');
+      const [includeInProgress, setIncludeInProgress] = useState(true);
+
+      const uniqueAdvisors = useMemo(() => {
+        const advSet = new Set(ADVISORS.map(a => a.name));
+        cases.forEach(c => {
+          if (c.asesor) advSet.add(c.asesor);
+        });
+        return Array.from(advSet).sort();
+      }, [cases]);
+
+      const filteredCases = useMemo(() => {
+        return cases.filter(c => {
+          if (filterCareer && c.carrera !== filterCareer) return false;
+          if (filterReason && c.motivo !== filterReason) return false;
+          if (filterStatus && c.estado !== filterStatus) return false;
+          if (filterSubstatus && c.subestado !== filterSubstatus) return false;
+          if (filterModalidad && c.modalidad !== filterModalidad) return false;
+          if (filterNivel && c.nivelCaso !== filterNivel) return false;
+          if (filterAsesor && c.asesor !== filterAsesor) return false;
+          return true;
+        });
+      }, [cases, filterCareer, filterReason, filterStatus, filterSubstatus, filterModalidad, filterNivel, filterAsesor]);
+
+      const total = filteredCases.length;
+      const retained = filteredCases.filter(c => c.estado === 'Retenido').length;
+      const droppedCases = filteredCases.filter(c => c.estado === 'Baja definitiva');
+      const dropped = droppedCases.length;
+      const inProgress = filteredCases.filter(c => c.estado !== 'Retenido' && c.estado !== 'Baja definitiva').length;
+
+      const totalChart = includeInProgress ? total : (retained + dropped);
+      const retainedPct = totalChart === 0 ? 0 : Math.round((retained / totalChart) * 100);
+      const droppedPct = totalChart === 0 ? 0 : Math.round((dropped / totalChart) * 100);
+      const inProgressPct = totalChart === 0 ? 0 : Math.round((inProgress / totalChart) * 100);
+
+      const breakdownBaja = droppedCases.reduce((acc, c) => {
+        const key = c.detalleBaja || 'Sin especificar';
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+
+      return (
+        <div className="space-y-6 relative z-0">
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 rounded-2xl pointer-events-none">
+            <div className="absolute -top-10 -left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse"></div>
+            <div className="absolute top-10 -right-10 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse" style={{ animationDelay: '2s' }}></div>
+            <div className="absolute -bottom-10 left-1/3 w-72 h-72 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse" style={{ animationDelay: '4s' }}></div>
+          </div>
+
+          <div className="bg-white/50 backdrop-blur-md p-4 rounded-2xl shadow-sm border border-white/60">
+            <div className="flex items-center gap-2 mb-3">
+              <Filter className="text-indigo-600" size={20} />
+              <span className="font-semibold text-slate-700">Filtros (Globales):</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              <select className="bg-white/60 backdrop-blur-sm border border-white/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 font-medium" value={filterAsesor} onChange={e => setFilterAsesor(e.target.value)}>
+                <option value="">Todos los Asesores</option>
+                {uniqueAdvisors.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+              <select className="bg-white/60 backdrop-blur-sm border border-white/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 font-medium" value={filterCareer} onChange={e => setFilterCareer(e.target.value)}>
+                <option value="">Todas las Carreras</option>
+                {CAREERS.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+              </select>
+              <select className="bg-white/60 backdrop-blur-sm border border-white/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 font-medium" value={filterModalidad} onChange={e => setFilterModalidad(e.target.value)}>
+                <option value="">Todas las Modalidades</option>
+                {ALL_MODALITIES.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+              <select className="bg-white/60 backdrop-blur-sm border border-white/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 font-medium" value={filterNivel} onChange={e => setFilterNivel(e.target.value)}>
+                <option value="">Todos los Niveles</option>
+                {NIVELES_CASO.map(n => <option key={n} value={n.split('—')[0].trim()}>{n.split('—')[0].trim()}</option>)}
+              </select>
+              <select className="bg-white/60 backdrop-blur-sm border border-white/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 font-medium" value={filterReason} onChange={e => setFilterReason(e.target.value)}>
+                <option value="">Todos los Motivos</option>
+                {REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+              <select className="bg-white/60 backdrop-blur-sm border border-white/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 font-medium" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                <option value="">Todos los Estados</option>
+                {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <select className="bg-white/60 backdrop-blur-sm border border-white/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 font-medium" value={filterSubstatus} onChange={e => setFilterSubstatus(e.target.value)}>
+                <option value="">Todos los Subestados</option>
+                {SUB_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-white/60 backdrop-blur-md p-6 rounded-3xl shadow-lg border border-white/80 flex flex-col justify-center transform transition-all hover:-translate-y-1">
+              <p className="text-xs text-slate-500 font-bold mb-2 uppercase tracking-widest">Total de Casos</p>
+              <p className="text-5xl font-extrabold text-slate-800 bg-clip-text text-transparent bg-gradient-to-br from-slate-700 to-slate-900">{total}</p>
+            </div>
             
-            // Rellenar selects
-            const populateEdit = (idSel, opts, val) => {
-                const sel = document.getElementById(idSel);
-                sel.innerHTML = `<option value="">Selecciona...</option>`;
-                let found = false;
-                opts.forEach(o => {
-                    const opt = document.createElement('option');
-                    opt.value = o; opt.textContent = o; 
-                    if(o === val) { opt.selected = true; found = true; }
-                    opt.className = "text-white bg-slate-900";
-                    sel.appendChild(opt);
-                });
-                // Si el valor editado no estaba en la configuración por defecto
-                if (val && !found) {
-                    const opt = document.createElement('option');
-                    opt.value = val; opt.textContent = val + " (Personalizado)"; 
-                    opt.selected = true;
-                    opt.className = "text-white bg-slate-900 text-cyan-300";
-                    sel.appendChild(opt);
-                }
-            };
+            <div className="bg-emerald-50/60 backdrop-blur-md p-6 rounded-3xl shadow-lg border border-emerald-100/80 relative overflow-hidden transform transition-all hover:-translate-y-1">
+              <div className="absolute -right-6 -top-6 opacity-20 text-emerald-500"><CheckCircle2 size={120} /></div>
+              <p className="text-xs text-emerald-700 font-bold mb-2 uppercase tracking-widest relative z-10">Retenidos</p>
+              <div className="flex items-end gap-2 relative z-10">
+                <p className="text-5xl font-extrabold text-emerald-600">{retained}</p>
+                <p className="text-xl font-bold text-emerald-500 mb-1">({retainedPct}%)</p>
+              </div>
+            </div>
 
-            populateEdit('edit-career', appConfig.careers, s.career);
-            populateEdit('edit-advisor', appConfig.advisors, s.advisor);
+            <div className="bg-red-50/60 backdrop-blur-md p-6 rounded-3xl shadow-lg border border-red-100/80 relative overflow-hidden transform transition-all hover:-translate-y-1">
+              <div className="absolute -right-6 -top-6 opacity-20 text-red-500"><XCircle size={120} /></div>
+              <p className="text-xs text-red-700 font-bold mb-2 uppercase tracking-widest relative z-10">Bajas</p>
+              <div className="flex items-end gap-2 relative z-10">
+                <p className="text-5xl font-extrabold text-red-600">{dropped}</p>
+                <p className="text-xl font-bold text-red-500 mb-1">({droppedPct}%)</p>
+              </div>
+            </div>
 
-            document.getElementById('edit-id').value = id;
-            document.getElementById('edit-name').value = s.name;
-            document.getElementById('edit-rating').value = s.rating;
-            document.getElementById('edit-feedback').value = s.feedback || '';
+            <div className="bg-indigo-50/60 backdrop-blur-md p-6 rounded-3xl shadow-lg border border-indigo-100/80 relative overflow-hidden transform transition-all hover:-translate-y-1">
+              <div className="absolute -right-6 -top-6 opacity-20 text-indigo-500"><Clock size={120} /></div>
+              <p className="text-xs text-indigo-700 font-bold mb-2 uppercase tracking-widest relative z-10">En Gestión</p>
+              <div className="flex items-end gap-2 relative z-10">
+                <p className="text-5xl font-extrabold text-indigo-600">{inProgress}</p>
+                <p className="text-xl font-bold text-indigo-500 mb-1">({inProgressPct}%)</p>
+              </div>
+            </div>
+          </div>
 
-            // Preguntas Dinámicas en Modal de Edición
-            const dynEditContainer = document.getElementById('edit-dynamic-questions');
-            dynEditContainer.innerHTML = '';
-            appConfig.questions.forEach(q => {
-                let optsHtml = `<option value="">Selecciona...</option>`;
-                q.opts.forEach(opt => {
-                    const selected = (s[q.id] === opt) ? 'selected' : '';
-                    optsHtml += `<option value="${opt}" class="text-white bg-slate-900" ${selected}>${opt}</option>`;
-                });
-                dynEditContainer.innerHTML += `
-                    <div>
-                        <label class="text-[10px] text-blue-200 uppercase font-bold tracking-wider">${q.label}</label>
-                        <select id="edit-dyn-${q.id}" class="w-full mt-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-cyan-400 outline-none text-sm">
-                            ${optsHtml}
-                        </select>
+          <div className={`grid grid-cols-1 ${dropped > 0 ? 'lg:grid-cols-2' : ''} gap-6`}>
+            {/* Gráfico de Barras Principal */}
+            <div className="bg-white/60 backdrop-blur-md p-8 rounded-3xl shadow-lg border border-white/80">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+                <h3 className="font-bold text-slate-800 text-lg">Distribución de Resultados Globales</h3>
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-600 cursor-pointer bg-white/50 px-3 py-1.5 rounded-lg border border-white/80">
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    checked={includeInProgress}
+                    onChange={(e) => setIncludeInProgress(e.target.checked)}
+                  />
+                  Incluir Casos en Gestión
+                </label>
+              </div>
+              <div className="relative w-full h-12 bg-slate-200/50 rounded-2xl overflow-hidden flex shadow-inner backdrop-blur-sm">
+                {totalChart > 0 ? (
+                  <>
+                    <div style={{ width: `${retainedPct}%` }} className="bg-gradient-to-r from-emerald-400 to-emerald-500 h-full flex items-center justify-center text-sm text-white font-bold transition-all duration-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)]">
+                      {retainedPct > 8 && `${retainedPct}%`}
                     </div>
-                `;
-            });
+                    {includeInProgress && (
+                      <div style={{ width: `${inProgressPct}%` }} className="bg-gradient-to-r from-indigo-300 to-indigo-400 h-full flex items-center justify-center text-sm text-white font-bold transition-all duration-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] border-l border-white/20">
+                        {inProgressPct > 8 && `${inProgressPct}%`}
+                      </div>
+                    )}
+                    <div style={{ width: `${droppedPct}%` }} className="bg-gradient-to-r from-red-400 to-red-500 h-full flex items-center justify-center text-sm text-white font-bold transition-all duration-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] border-l border-white/20">
+                      {droppedPct > 8 && `${droppedPct}%`}
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-sm text-slate-500 font-medium">No hay datos suficientes</div>
+                )}
+              </div>
+              
+              <div className="flex flex-wrap gap-4 mt-6 justify-center">
+                <div className="flex items-center gap-2 bg-emerald-50/80 px-4 py-2 rounded-xl border border-emerald-100 shadow-sm"><span className="w-4 h-4 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 shadow-sm"></span> <span className="text-sm font-bold text-emerald-800">Retenidos</span></div>
+                {includeInProgress && (
+                  <div className="flex items-center gap-2 bg-indigo-50/80 px-4 py-2 rounded-xl border border-indigo-100 shadow-sm"><span className="w-4 h-4 rounded-full bg-gradient-to-r from-indigo-300 to-indigo-400 shadow-sm"></span> <span className="text-sm font-bold text-indigo-800">En Gestión</span></div>
+                )}
+                <div className="flex items-center gap-2 bg-red-50/80 px-4 py-2 rounded-xl border border-red-100 shadow-sm"><span className="w-4 h-4 rounded-full bg-gradient-to-r from-red-400 to-red-500 shadow-sm"></span> <span className="text-sm font-bold text-red-800">Bajas</span></div>
+              </div>
+            </div>
 
-            document.getElementById('modal-edit').classList.remove('hidden-view');
-        };
-
-        window.closeEditModal = () => document.getElementById('modal-edit').classList.add('hidden-view');
-
-        document.getElementById('form-edit').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('edit-id').value;
-            const updateData = {
-                name: document.getElementById('edit-name').value,
-                career: document.getElementById('edit-career').value,
-                advisor: document.getElementById('edit-advisor').value,
-                rating: parseInt(document.getElementById('edit-rating').value),
-                feedback: document.getElementById('edit-feedback').value
-            };
-            appConfig.questions.forEach(q => {
-                const sel = document.getElementById(`edit-dyn-${q.id}`);
-                if (sel) updateData[q.id] = sel.value;
-            });
-
-            try {
-                await updateDoc(doc(db, "cervantes_surveys", id), updateData);
-                closeEditModal();
-            } catch(err) { alert("Error al actualizar"); }
-        });
-
-        window.deleteSurvey = async (id) => {
-            if(confirm("¿Estás seguro de eliminar esta respuesta? No se puede deshacer.")) {
-                try { await deleteDoc(doc(db, "cervantes_surveys", id)); } 
-                catch(err) { alert("Error al eliminar"); }
-            }
-        };
-
-        // --- Configuración CMS Logic ---
-        window.openSettingsModal = () => {
-            // Mostrar u ocultar banner de advertencia según haya error de permisos o no.
-            if (hasPermissionError) {
-                document.getElementById('settings-error-banner').classList.remove('hidden');
-            } else {
-                document.getElementById('settings-error-banner').classList.add('hidden');
-            }
-
-            document.getElementById('settings-careers').value = appConfig.careers.join('\n');
-            document.getElementById('settings-advisors').value = appConfig.advisors.join('\n');
-            
-            const qList = document.getElementById('settings-questions-list');
-            qList.innerHTML = '';
-            appConfig.questions.forEach(q => addQuestionBlock(q));
-            
-            document.getElementById('modal-settings').classList.remove('hidden-view');
-        };
-
-        window.closeSettingsModal = () => {
-            document.getElementById('modal-settings').classList.add('hidden-view');
-        };
-
-        window.addQuestionBlock = (q = { id: 'q_' + Date.now(), label: '', opts: [] }) => {
-            const qList = document.getElementById('settings-questions-list');
-            const div = document.createElement('div');
-            div.className = "bg-black/40 p-4 rounded-xl border border-white/10 relative question-block";
-            div.innerHTML = `
-                <button type="button" onclick="this.parentElement.remove()" class="absolute top-2 right-2 text-red-400 hover:text-red-300 transition p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                <input type="hidden" class="q-id" value="${q.id}">
-                <div class="mb-3 pr-6">
-                    <label class="text-[10px] text-cyan-200 uppercase font-bold tracking-wider">Pregunta</label>
-                    <input type="text" class="q-label w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-white text-sm focus:border-cyan-400 outline-none" value="${q.label}" placeholder="Ej: ¿Te explicaron bien?">
+            {/* Desglose de Bajas Definitivas */}
+            {dropped > 0 && (
+              <div className="bg-white/60 backdrop-blur-md p-8 rounded-3xl shadow-lg border border-white/80 animate-fade-in">
+                <h3 className="font-bold text-slate-800 mb-6 text-lg flex items-center gap-2">
+                  <XCircle className="text-red-500" size={20}/> Detalle de Bajas Definitivas
+                </h3>
+                <div className="space-y-4">
+                  {Object.entries(breakdownBaja).map(([motivo, count]) => {
+                    const percent = Math.round((count / dropped) * 100);
+                    return (
+                      <div key={motivo}>
+                        <div className="flex justify-between text-sm mb-1.5">
+                          <span className="font-semibold text-slate-700 truncate pr-4">{motivo}</span>
+                          <span className="font-bold text-red-600">{count} <span className="text-slate-400 font-normal">({percent}%)</span></span>
+                        </div>
+                        <div className="w-full bg-slate-200/50 h-2.5 rounded-full overflow-hidden shadow-inner">
+                          <div className="bg-red-400 h-full rounded-full transition-all duration-700" style={{ width: `${percent}%` }}></div>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
-                <div>
-                    <label class="text-[10px] text-cyan-200 uppercase font-bold tracking-wider">Opciones (separadas por coma)</label>
-                    <input type="text" class="q-opts w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-white text-sm focus:border-cyan-400 outline-none" value="${q.opts.join(', ')}" placeholder="Sí, No, Tal vez">
-                </div>
-            `;
-            qList.appendChild(div);
-            lucide.createIcons();
-        };
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
 
-        document.getElementById('form-settings').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = e.target.querySelector('button[type="submit"]');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = `<span class="loader w-4 h-4 mr-2 border-t-transparent border-white"></span> Guardando...`;
-            btn.disabled = true;
+    // --- CASE LIST COMPONENT ---
+    function CaseList({ cases, allCases, onSelect, title, emptyMsg }) {
+      const [searchTerm, setSearchTerm] = useState('');
+      const [filterAsesor, setFilterAsesor] = useState('');
 
-            const newCareers = document.getElementById('settings-careers').value.split('\n').map(s => s.trim()).filter(s => s);
-            const newAdvisors = document.getElementById('settings-advisors').value.split('\n').map(s => s.trim()).filter(s => s);
-            
-            const newQuestions = [];
-            document.querySelectorAll('.question-block').forEach(block => {
-                const id = block.querySelector('.q-id').value;
-                const label = block.querySelector('.q-label').value.trim();
-                const opts = block.querySelector('.q-opts').value.split(',').map(s => s.trim()).filter(s => s);
-                if (label && opts.length > 0) newQuestions.push({ id, label, opts });
-            });
-
-            appConfig = { careers: newCareers, advisors: newAdvisors, questions: newQuestions };
-
-            try {
-                await setDoc(doc(db, 'cervantes_config', 'main'), appConfig);
-                hasPermissionError = false;
-                closeSettingsModal();
-                initApp(); // Refrescar UI con nueva configuración
-            } catch (err) {
-                console.warn(err);
-                if (err.code === 'permission-denied') {
-                    document.getElementById('settings-error-banner').classList.remove('hidden');
-                } else {
-                    alert("Error al guardar la configuración.");
-                }
-            }
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+      const uniqueAdvisors = useMemo(() => {
+        const advSet = new Set(ADVISORS.map(a => a.name));
+        allCases.forEach(c => {
+          if (c.asesor && c.asesor !== 'No asignado') advSet.add(c.asesor);
         });
+        return Array.from(advSet).sort();
+      }, [allCases]);
 
-        // --- Exportación e Integración Final ---
-        window.exportToExcel = () => {
-            const data = currentFilter === "Todos" ? surveysData : surveysData.filter(s => s.advisor === currentFilter);
-            const formatted = data.map(i => {
-                const obj = {
-                    Fecha: i.timestamp ? new Date(i.timestamp.seconds*1000).toLocaleDateString() : 'N/A',
-                    Nombre: i.name,
-                    Carrera: i.career,
-                    Asesor: i.advisor,
-                    Calificación: i.rating
-                };
-                appConfig.questions.forEach(q => {
-                    obj[q.label] = i[q.id] || '';
-                });
-                obj.Feedback = i.feedback || '';
-                return obj;
-            });
+      // Búsqueda inteligente: si hay texto de búsqueda, busca en TODA la base de datos (allCases).
+      // Si no hay texto, respeta la vista de pestañas actual (cases = activos o resueltos).
+      const sourceCases = searchTerm.trim() !== '' ? allCases : cases;
 
-            const ws = XLSX.utils.json_to_sheet(formatted);
-            const wb = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(wb, ws, "Encuestas");
-            XLSX.writeFile(wb, "Reporte_Cervantes.xlsx");
-        };
+      const filtered = sourceCases.filter(c => {
+        const term = searchTerm.toLowerCase().trim();
+        const matchesSearch = c.nombre.toLowerCase().includes(term) || 
+                              c.matricula.toLowerCase().includes(term) ||
+                              (c.telefono && c.telefono.includes(term)) ||
+                              (c.caseNumber && c.caseNumber.toLowerCase().includes(term));
+        const matchesAsesor = filterAsesor === '' || c.asesor === filterAsesor;
+        return matchesSearch && matchesAsesor;
+      });
 
-        window.shareSurveyLink = async () => {
-            const url = window.location.href.split('?')[0];
-            if (navigator.share) await navigator.share({ title: 'Encuesta', text: 'Ayúdanos a mejorar', url });
-            else { await navigator.clipboard.writeText(url); alert("Link copiado!"); }
-        };
+      const getInitials = (name) => {
+        return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+      };
 
-        // Flujo de Autenticación Anónima Robusto
-        async function startAppAuth() {
-            try {
-                await signInAnonymously(auth);
-                await loadSystemConfig();
-                initApp();
-            } catch (error) {
-                console.warn("Aviso de autenticación/configuración:", error.message);
-                // Si falla el logueo, intentamos cargar igual (probablemente falle si las reglas lo exigen)
-                await loadSystemConfig();
-                initApp();
-            }
+      const getMotivoStyle = (motivo) => {
+        switch(motivo) {
+          case 'Económico': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+          case 'Falta de tiempo / Horarios': return 'bg-blue-50 text-blue-700 border-blue-200';
+          case 'Laboral': return 'bg-orange-50 text-orange-700 border-orange-200';
+          case 'Académico': return 'bg-purple-50 text-purple-700 border-purple-200';
+          case 'Personal / Salud': return 'bg-rose-50 text-rose-700 border-rose-200';
+          default: return 'bg-slate-100 text-slate-700 border-slate-200';
+        }
+      };
+
+      const getNivelStyle = (nivel) => {
+        if (!nivel) return 'text-slate-600 bg-slate-100 border-slate-200';
+        if (nivel.includes('Nivel 1')) return 'text-emerald-700 bg-emerald-100 border-emerald-200';
+        if (nivel.includes('Nivel 2')) return 'text-amber-700 bg-amber-100 border-amber-200';
+        if (nivel.includes('Nivel 3')) return 'text-red-700 bg-red-100 border-red-200';
+        if (nivel.includes('Nivel 4')) return 'text-slate-700 bg-slate-200 border-slate-300';
+        return 'text-slate-600 bg-slate-100 border-slate-200';
+      };
+
+      return (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden animate-fade-in w-full">
+          <div className="p-4 md:p-5 border-b border-slate-100 flex flex-col xl:flex-row justify-between items-start xl:items-center bg-white gap-4">
+            <h3 className="font-bold text-lg text-slate-800 w-full xl:w-auto">{title}</h3>
+            
+            <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+              <select 
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium w-full sm:w-auto"
+                value={filterAsesor}
+                onChange={(e) => setFilterAsesor(e.target.value)}
+              >
+                <option value="">Todos los asesores</option>
+                {uniqueAdvisors.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-3 top-3 text-slate-400" size={18} />
+                <input 
+                  type="text"
+                  placeholder="Buscar nombre, matrícula, teléfono..."
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse whitespace-nowrap min-w-[800px]">
+              <thead>
+                <tr className="bg-slate-50/50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-100">
+                  <th className="p-4 font-semibold">Matrícula</th>
+                  <th className="p-4 font-semibold">Alumno</th>
+                  <th className="p-4 font-semibold">Carrera y Modalidad</th>
+                  <th className="p-4 font-semibold">Motivo y Nivel</th>
+                  <th className="p-4 font-semibold">Estado y Subestado</th>
+                  <th className="p-4 font-semibold text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filtered.length === 0 ? (
+                  <tr><td colSpan="6" className="p-10 text-center text-slate-500 font-medium">{emptyMsg}</td></tr>
+                ) : (
+                  filtered.map(c => {
+                    const careerInfo = CAREERS.find(car => car.name === c.carrera) || CAREERS[0];
+                    return (
+                      <tr key={c.id} className="hover:bg-slate-50/80 transition-all cursor-pointer group" onClick={() => onSelect(c.id)}>
+                        <td className="p-4">
+                          <div className="font-mono text-sm font-bold text-indigo-600 bg-indigo-50 inline-block px-2.5 py-1 rounded-md">{c.matricula}</div>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-inner flex-shrink-0" style={{ backgroundColor: careerInfo.hex }}>
+                              {getInitials(c.nombre)}
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-800">{c.nombre}</div>
+                              <div className="flex items-center gap-3 mt-0.5">
+                                <span className="text-xs text-slate-500 flex items-center gap-1"><Phone size={10} /> {c.telefono}</span>
+                                <span className="text-xs text-slate-500 flex items-center gap-1 border-l border-slate-300 pl-2"><User size={10} /> {c.asesor || 'Sin asesor'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex flex-col items-start gap-1.5">
+                            <span 
+                              style={{ backgroundColor: careerInfo.hex + '1A', color: careerInfo.hex, borderColor: careerInfo.hex + '40' }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border"
+                            >
+                              <span style={{ backgroundColor: careerInfo.hex }} className="w-1.5 h-1.5 rounded-full"></span>
+                              {c.carrera}
+                            </span>
+                            <span className="text-xs text-slate-500 font-bold px-1">{c.modalidad || 'No especificada'}</span>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex flex-col items-start gap-1.5">
+                            <span className={`inline-flex px-3 py-1.5 rounded-lg text-xs font-bold border shadow-sm ${getMotivoStyle(c.motivo)}`}>
+                              {c.motivo}
+                            </span>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${getNivelStyle(c.nivelCaso)}`}>
+                              <AlertTriangle size={10} className="mr-1" /> {(c.nivelCaso || '').split('—')[0] || 'Sin nivel'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex flex-col gap-1.5 items-start">
+                            <StatusBadge status={c.estado} />
+                            {c.estado === 'Baja definitiva' ? (
+                              <div className="mt-1.5 text-[10px] text-red-600 font-bold leading-tight bg-red-50 border border-red-200 px-2 py-0.5 rounded whitespace-normal">
+                                {c.tipoBaja || 'NO CONTINUA'} - {c.detalleBaja}
+                              </div>
+                            ) : (
+                              <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 uppercase tracking-wider">
+                                {c.subestado || 'Sin subestado'}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-4 text-right">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); onSelect(c.id); }}
+                            className="p-2 text-slate-400 group-hover:text-indigo-600 group-hover:bg-indigo-50 rounded-xl transition-all inline-flex items-center gap-1 font-semibold text-sm"
+                          >
+                            Ver Caso <ChevronRight size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    function StatusBadge({ status }) {
+      let styles = "bg-slate-100 text-slate-700";
+      if (status === 'Retenido') styles = "bg-emerald-100 text-emerald-800 border border-emerald-200";
+      if (status === 'Baja definitiva') styles = "bg-red-100 text-red-800 border border-red-200";
+      if (status === 'Nuevo caso') styles = "bg-sky-100 text-sky-800 border border-sky-200";
+      if (status === 'En seguimiento') styles = "bg-indigo-100 text-indigo-800 border border-indigo-200";
+      if (status === 'Esperando respuesta') styles = "bg-amber-100 text-amber-800 border border-amber-200";
+
+      return <span className={`px-2.5 py-1.5 rounded-md text-[11px] uppercase tracking-wider font-bold shadow-sm ${styles}`}>{status}</span>;
+    }
+
+    // --- CASE FORM COMPONENT ---
+    function CaseForm({ onSave, onCancel, cases = [], onOpenCase }) {
+      const [formData, setFormData] = useState({
+        matricula: '', nombre: '', telefono: '', carrera: CAREERS[0].name, modalidad: CAREERS[0].modalities[0], tipoAlumno: [], nivelCaso: NIVELES_CASO[0], estado: 'Nuevo caso', subestado: SUB_STATUSES[0], motivo: REASONS[0], empresaAmiga: false, nombreEmpresa: '', observacion: '', tipoBaja: 'NO CONTINUA', detalleBaja: BAJA_SUBCATEGORIES[0], asesor: ADVISORS[0].name
+      });
+
+      // Lógica segura para determinar si es un duplicado verdadero (no vacío)
+      const inputMatricula = formData.matricula ? String(formData.matricula).trim() : '';
+      const duplicateCase = inputMatricula ? cases.find(c => {
+         const cMat = c.matricula ? String(c.matricula).trim() : '';
+         return cMat === inputMatricula;
+      }) : null;
+      const isDuplicate = !!duplicateCase;
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        if (isDuplicate) return;
+
+        const dataToSave = {...formData};
+        if (dataToSave.estado !== 'Baja definitiva') {
+          dataToSave.detalleBaja = null;
+          dataToSave.tipoBaja = null;
         }
 
-        startAppAuth();
+        if (dataToSave.asesor === 'Otro') {
+          dataToSave.asesor = (dataToSave.asesorOtro || '').trim() || 'Sin especificar';
+        }
+        
+        delete dataToSave.asesorOtro;
+        delete dataToSave.detalleBajaOtro;
 
-    </script>
+        // Limpiar undefined
+        Object.keys(dataToSave).forEach(key => {
+          if (dataToSave[key] === undefined) delete dataToSave[key];
+        });
+
+        onSave(dataToSave);
+      };
+
+      const handleCareerChange = (e) => {
+        const newCareerName = e.target.value;
+        const newCareerObj = CAREERS.find(c => c.name === newCareerName);
+        let currentModality = formData.modalidad;
+
+        if (!newCareerObj.modalities.includes(currentModality)) {
+          currentModality = newCareerObj.modalities[0];
+        }
+
+        setFormData({...formData, carrera: newCareerName, modalidad: currentModality});
+      };
+
+      const handleTipoAlumnoChange = (tipo) => {
+        setFormData(prev => {
+          const newTipos = prev.tipoAlumno.includes(tipo)
+            ? prev.tipoAlumno.filter(t => t !== tipo)
+            : [...prev.tipoAlumno, tipo];
+          return { ...prev, tipoAlumno: newTipos };
+        });
+      };
+
+      const careerInfo = CAREERS.find(c => c.name === formData.carrera) || CAREERS[0];
+      
+      return (
+        <div 
+          className="max-w-3xl mx-auto bg-white rounded-2xl shadow-md border-t-4 p-5 md:p-8 transition-all duration-300 animate-fade-in"
+          style={{ borderTopColor: careerInfo.hex }}
+        >
+          <div className="flex items-center justify-between mb-6 border-b pb-4 border-slate-100">
+            <div className="flex items-center gap-3">
+               <div className="p-2.5 rounded-xl" style={{ backgroundColor: careerInfo.hex + '20', color: careerInfo.hex }}>
+                 <UserPlus size={24} />
+               </div>
+               <h3 className="text-xl font-bold text-slate-800">
+                 Registrar Estudiante
+               </h3>
+            </div>
+          </div>
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
+              <label className="block text-sm font-bold text-slate-700 mb-2">Asesor a cargo de la gestión</label>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <select className="w-full sm:w-1/2 border border-slate-300 rounded-xl p-2.5 focus:ring-2 outline-none transition-shadow bg-white"
+                  style={{ '--tw-ring-color': careerInfo.hex }}
+                  value={formData.asesor} onChange={e => setFormData({...formData, asesor: e.target.value})}>
+                  {ADVISORS.map(a => <option key={a.name} value={a.name}>{a.name}</option>)}
+                  <option value="Otro">Otro (Ingresar manualmente)</option>
+                </select>
+                {formData.asesor === 'Otro' && (
+                  <input required type="text" placeholder="Nombre del nuevo asesor..." className="w-full sm:w-1/2 border border-slate-300 rounded-xl p-2.5 focus:ring-2 outline-none transition-shadow animate-fade-in"
+                    style={{ '--tw-ring-color': careerInfo.hex }}
+                    value={formData.asesorOtro || ''} onChange={e => setFormData({...formData, asesorOtro: e.target.value})} />
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Nombre y Apellido</label>
+                <input required type="text" className="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 outline-none transition-shadow"
+                  style={{ '--tw-ring-color': careerInfo.hex }}
+                  value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Matrícula</label>
+                <input required type="text" className={`w-full border rounded-xl p-2.5 focus:ring-2 outline-none transition-shadow ${isDuplicate ? 'border-red-400 bg-red-50 text-red-900' : 'border-slate-300'}`}
+                  style={{ '--tw-ring-color': careerInfo.hex }}
+                  value={formData.matricula} onChange={e => setFormData({...formData, matricula: e.target.value})} />
+                
+                {isDuplicate && (
+                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fade-in flex flex-col gap-2">
+                    <span className="text-red-600 text-xs font-bold flex items-center gap-1"><AlertTriangle size={14}/> Matrícula ya registrada.</span>
+                    <button type="button" onClick={() => onOpenCase(duplicateCase.id)} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 self-start transition-colors bg-white px-2 py-1 rounded border border-indigo-200">
+                      Abrir registro original <ChevronRight size={12}/>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Teléfono Celular</label>
+                <input required type="text" placeholder="Ej: 351..." className="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 outline-none transition-shadow"
+                  style={{ '--tw-ring-color': careerInfo.hex }}
+                  value={formData.telefono} onChange={e => setFormData({...formData, telefono: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Carrera</label>
+                <select className="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 outline-none transition-shadow"
+                  style={{ '--tw-ring-color': careerInfo.hex }}
+                  value={formData.carrera} onChange={handleCareerChange}>
+                  {CAREERS.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Modalidad Actual</label>
+                <select className="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 outline-none transition-shadow"
+                  style={{ '--tw-ring-color': careerInfo.hex }}
+                  value={formData.modalidad} onChange={e => setFormData({...formData, modalidad: e.target.value})}>
+                  {careerInfo.modalities.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Motivo principal</label>
+                <select className="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 outline-none transition-shadow"
+                  style={{ '--tw-ring-color': careerInfo.hex }}
+                  value={formData.motivo} onChange={e => setFormData({...formData, motivo: e.target.value})}>
+                  {REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Nivel de Gravedad</label>
+                <select className="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 outline-none transition-shadow"
+                  style={{ '--tw-ring-color': careerInfo.hex }}
+                  value={formData.nivelCaso} onChange={e => setFormData({...formData, nivelCaso: e.target.value})}>
+                  {NIVELES_CASO.map(n => <option key={n} value={n.split('—')[0].trim()}>{n.split('—')[0].trim()}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Estado del caso</label>
+                <select className="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 outline-none transition-shadow"
+                  style={{ '--tw-ring-color': careerInfo.hex }}
+                  value={formData.estado} onChange={e => setFormData({...formData, estado: e.target.value})}>
+                  {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Subestado</label>
+                <select className="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 outline-none transition-shadow"
+                  style={{ '--tw-ring-color': careerInfo.hex }}
+                  value={formData.subestado} onChange={e => setFormData({...formData, subestado: e.target.value})}>
+                  {SUB_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {formData.estado === 'Baja definitiva' && (
+              <div className="bg-red-50 p-4 rounded-xl border border-red-200 animate-fade-in col-span-full">
+                <label className="block text-sm font-bold text-red-800 mb-2">Especificar Tipo y Detalle de la Baja Definitiva</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                  <select 
+                    className="w-full border border-red-200 bg-white rounded-lg p-2.5 focus:ring-2 focus:ring-red-400 outline-none text-sm text-slate-700"
+                    value={formData.tipoBaja || 'NO CONTINUA'} onChange={e => setFormData({...formData, tipoBaja: e.target.value})}>
+                    <option value="NO CONTINUA">NO CONTINUA</option>
+                    <option value="NO INICIA">NO INICIA</option>
+                  </select>
+                  <select 
+                    className="w-full border border-red-200 bg-white rounded-lg p-2.5 focus:ring-2 focus:ring-red-400 outline-none text-sm text-slate-700"
+                    value={formData.detalleBaja || BAJA_SUBCATEGORIES[0]} onChange={e => setFormData({...formData, detalleBaja: e.target.value})}>
+                    {BAJA_SUBCATEGORIES.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                </div>
+                {formData.detalleBaja === 'Otro' && (
+                  <input required type="text" placeholder="Escribe el motivo detallado aquí..." className="w-full border border-red-200 bg-white rounded-lg p-2.5 text-sm focus:ring-2 outline-none"
+                    value={formData.detalleBajaOtro || ''} onChange={e => setFormData({...formData, detalleBajaOtro: e.target.value})} />
+                )}
+              </div>
+            )}
+
+            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
+              <h4 className="font-bold text-slate-700 text-sm border-b border-slate-200 pb-2">Perfil del Alumno (Múltiple Selección)</h4>
+              
+              <div className="flex flex-wrap gap-4">
+                {STUDENT_TYPES.map(tipo => (
+                  <label key={tipo} className="flex items-center gap-2 cursor-pointer bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm hover:border-indigo-300 transition-colors">
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 rounded border-gray-300 focus:ring-2"
+                      style={{ accentColor: careerInfo.hex }}
+                      checked={formData.tipoAlumno && formData.tipoAlumno.includes(tipo)}
+                      onChange={() => handleTipoAlumnoChange(tipo)}
+                    />
+                    <span className="text-sm font-bold text-slate-700">{tipo}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="pt-2">
+                <label className="flex items-center gap-2 cursor-pointer bg-indigo-50/50 px-3 py-2 rounded-lg border border-indigo-100 transition-colors w-fit">
+                  <input type="checkbox" className="w-4 h-4 rounded border-gray-300 focus:ring-2"
+                    style={{ accentColor: careerInfo.hex }}
+                    checked={formData.empresaAmiga} onChange={e => setFormData({...formData, empresaAmiga: e.target.checked, nombreEmpresa: !e.target.checked ? '' : formData.nombreEmpresa})} />
+                  <span className="text-sm font-bold text-indigo-900">
+                    Posee Convenio "Empresa Amiga" (Ya tiene 20% desc.)
+                  </span>
+                </label>
+                
+                {formData.empresaAmiga && (
+                  <div className="mt-3 ml-1 animate-fade-in w-full md:w-1/2">
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Nombre de la Empresa</label>
+                    <input required type="text" placeholder="Ej: Naranja X, Apex..." className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 outline-none text-sm transition-shadow shadow-sm"
+                      style={{ '--tw-ring-color': careerInfo.hex }}
+                      value={formData.nombreEmpresa || ''} onChange={e => setFormData({...formData, nombreEmpresa: e.target.value})} />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1 flex justify-between items-end">
+                Detalle del Motivo / Situación Inicial
+              </label>
+              <textarea required rows={3} className="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 outline-none transition-shadow"
+                style={{ '--tw-ring-color': careerInfo.hex }}
+                placeholder="Detalla la situación particular..."
+                value={formData.observacion || ''} onChange={e => setFormData({...formData, observacion: e.target.value})}></textarea>
+              <p className="text-xs text-slate-500 mt-2">* Nota: Luego podrás añadir un historial detallado paso a paso desde el panel del caso.</p>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+              <button type="button" onClick={onCancel} className="px-5 py-2.5 border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-colors w-full sm:w-auto">
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                disabled={isDuplicate}
+                className="px-5 py-2.5 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all hover:opacity-90 shadow-sm w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: isDuplicate ? '#94a3b8' : careerInfo.hex }}
+              >
+                <Save size={18} /> Guardar Caso
+              </button>
+            </div>
+          </form>
+        </div>
+      );
+    }
+
+    // --- CASE DETAIL COMPONENT ---
+    function CaseDetail({ caseData, onBack, onUpdate, onDelete }) {
+      const [localData, setLocalData] = useState(caseData);
+      
+      const [showDeleteModal, setShowDeleteModal] = useState(false);
+      const [showBajaModal, setShowBajaModal] = useState(false);
+      
+      const [newInteraction, setNewInteraction] = useState('');
+      const [interactionType, setInteractionType] = useState('indagacion'); 
+
+      const [editingMsgId, setEditingMsgId] = useState(null);
+      const [editingMsgText, setEditingMsgText] = useState("");
+      const [deletingMsgId, setDeletingMsgId] = useState(null);
+
+      const historyEndRef = useRef(null);
+
+      useEffect(() => {
+        if (caseData) setLocalData(caseData);
+      }, [caseData]);
+
+      useEffect(() => {
+        historyEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, [caseData?.interacciones]);
+
+      if (!caseData) return null;
+
+      const careerInfo = CAREERS.find(c => c.name === caseData.carrera) || CAREERS[0];
+      const cleanPhone = caseData.telefono.replace(/\D/g, '');
+      
+      const isTimeIssue = caseData.motivo.includes('tiempo') || caseData.motivo.includes('Horarios');
+      const isEconIssue = caseData.motivo.includes('Económico');
+
+      const currentDiscount = caseData.empresaAmiga ? 20 : 0;
+      const extraBaseOffer = caseData.empresaAmiga ? 10 : 20;
+      const totalBaseDiscount = currentDiscount + extraBaseOffer; 
+      const extraProofOffer = caseData.empresaAmiga ? 20 : 40;
+      const totalProofDiscount = currentDiscount + extraProofOffer; 
+
+      // --- INLINE EDITING HANDLERS ---
+      const handleBlur = (field, value) => {
+        if (caseData[field] !== value) {
+          onUpdate({ ...caseData, [field]: value });
+        }
+      };
+
+      const handleSelectChange = (field, value) => {
+        setLocalData({ ...localData, [field]: value });
+        onUpdate({ ...caseData, [field]: value });
+      };
+
+      const handleCareerChange = (newCareer) => {
+        const careerObj = CAREERS.find(c => c.name === newCareer);
+        let newModality = localData.modalidad;
+        if (!careerObj.modalities.includes(newModality)) {
+          newModality = careerObj.modalities[0];
+        }
+        setLocalData({ ...localData, carrera: newCareer, modalidad: newModality });
+        onUpdate({ ...caseData, carrera: newCareer, modalidad: newModality });
+      };
+
+      const handleStatusClick = (s) => {
+        if (s === 'Baja definitiva') {
+          setShowBajaModal(true);
+        } else {
+          onUpdate({ ...caseData, estado: s, detalleBaja: null, tipoBaja: null });
+        }
+      };
+
+      const confirmBajaDefinitiva = () => {
+        const finalReason = localData.detalleBaja === 'Otro' ? localData.detalleBajaOtro : localData.detalleBaja;
+        onUpdate({ ...caseData, estado: 'Baja definitiva', tipoBaja: localData.tipoBaja, detalleBaja: finalReason });
+        setShowBajaModal(false);
+      };
+
+      // --- GENERADOR DE MENSAJE DE WHATSAPP ---
+      const getWhatsAppUrl = () => {
+        const asesorName = caseData.asesor && caseData.asesor !== 'No asignado' ? caseData.asesor : 'Lucas';
+        const greeting = `Hola, ${caseData.nombre} ${caseData.matricula} ¿cómo estás? 👋\n\nTe escribe ${asesorName} del Departamento Comercial de Cervantes.\n\n`;
+        
+        let body = '';
+        if (caseData.motivo === 'Económico') {
+          body = `Vimos que tu solicitud de baja está relacionada con un motivo económico y queríamos saber si podemos ayudarte antes de avanzar con la baja definitiva.\n\nEn algunos casos contamos con ayudas económicas transitorias o alternativas de pago para que los estudiantes puedan continuar el cursado sin tener que dejar la carrera.\n\nSi te parece, lo vemos unos minutos y evaluamos si hay alguna opción que se adapte a tu situación actual.\n\nQuedo atento a lo que nos quieras comentar.`;
+        } else if (caseData.motivo === 'Académico') {
+          body = `Vimos tu solicitud de baja y el comentario sobre tu disconformidad con la institución. Antes de avanzar con la baja definitiva, me gustaría poder conocer un poco más tu experiencia para entender qué fue lo que ocurrió.\n\nTu devolución es muy importante para nosotros y, si existe alguna forma de mejorar la situación o acompañarte para que puedas continuar, con gusto lo evaluamos.\n\nQuedo atento a lo que nos quieras comentar.`;
+        } else {
+          body = `Vimos tu solicitud de baja y queríamos consultarte un poco más sobre el motivo, así podemos entender bien tu situación y ver si existe alguna alternativa para acompañarte.\n\n¿Tiene que ver con cuestiones laborales, falta de tiempo, temas de salud o algún otro motivo en particular?\n\nSi querés, contame un poco más y lo vemos juntos.`;
+        }
+        
+        const text = encodeURIComponent(greeting + body);
+        return `https://wa.me/${cleanPhone}?text=${text}`;
+      };
+
+      const handleWhatsAppClick = () => {
+        if (caseData.estado === 'Nuevo caso') {
+          onUpdate({ ...caseData, estado: 'En seguimiento' });
+        }
+      };
+
+      // --- HISTORIAL HANDLERS ---
+      const handleAddInteraction = () => {
+        if (!newInteraction.trim()) return;
+        
+        const interaccion = {
+          id: Date.now().toString(),
+          fecha: new Date().toISOString(),
+          texto: newInteraction.trim(),
+          rol: interactionType
+        };
+
+        const currentInteracciones = caseData.interacciones || [];
+        
+        if (currentInteracciones.length === 0 && caseData.observacion) {
+          currentInteracciones.push({
+            id: 'initial',
+            fecha: caseData.fecha ? caseData.fecha + 'T00:00:00.000Z' : new Date().toISOString(),
+            texto: caseData.observacion,
+            rol: 'sistema'
+          });
+        }
+
+        onUpdate({
+          ...caseData,
+          interacciones: [...currentInteracciones, interaccion]
+        });
+
+        setNewInteraction('');
+      };
+
+      const handleEditMsgStart = (msg) => {
+        setEditingMsgId(msg.id || 'old');
+        setEditingMsgText(msg.texto);
+        setDeletingMsgId(null);
+      };
+
+      const handleEditMsgCancel = () => {
+        setEditingMsgId(null);
+        setEditingMsgText("");
+      };
+
+      const handleEditMsgSave = () => {
+        let finalInteractions = [...(caseData.interacciones || [])];
+        
+        if (editingMsgId === 'old' || editingMsgId === 'initial') {
+          if (finalInteractions.length === 0) {
+            finalInteractions = [{
+              id: 'initial',
+              fecha: caseData.fecha ? caseData.fecha + 'T00:00:00.000Z' : new Date().toISOString(),
+              texto: editingMsgText,
+              rol: 'sistema'
+            }];
+          } else {
+            const idx = finalInteractions.findIndex(i => i.id === 'initial' || i.id === 'old');
+            if (idx !== -1) {
+              finalInteractions[idx].texto = editingMsgText;
+            }
+          }
+          
+          onUpdate({
+            ...caseData,
+            observacion: editingMsgText, 
+            interacciones: finalInteractions
+          });
+        } else {
+          finalInteractions = finalInteractions.map(i => 
+            i.id === editingMsgId ? { ...i, texto: editingMsgText } : i
+          );
+          onUpdate({
+            ...caseData,
+            interacciones: finalInteractions
+          });
+        }
+        
+        setEditingMsgId(null);
+        setEditingMsgText("");
+      };
+
+      const handleDeleteMsgConfirm = (msgId) => {
+        let finalInteractions = [...(caseData.interacciones || [])];
+        
+        if (msgId === 'old' || msgId === 'initial') {
+          onUpdate({
+            ...caseData,
+            observacion: '',
+            interacciones: finalInteractions.filter(i => i.id !== 'initial' && i.id !== 'old')
+          });
+        } else {
+          onUpdate({
+            ...caseData,
+            interacciones: finalInteractions.filter(i => i.id !== msgId)
+          });
+        }
+        setDeletingMsgId(null);
+      };
+
+      const interacciones = (caseData.interacciones && caseData.interacciones.length > 0) 
+        ? caseData.interacciones 
+        : (caseData.observacion ? [{id: 'old', fecha: caseData.fecha ? caseData.fecha + 'T12:00:00.000Z' : new Date().toISOString(), texto: caseData.observacion, rol: 'sistema'}] : []);
+
+      const getNivelStyle = (nivel) => {
+        if (!nivel) return 'text-slate-600 bg-slate-100 border-slate-200';
+        if (nivel.includes('Nivel 1')) return 'text-emerald-700 bg-emerald-100 border-emerald-200';
+        if (nivel.includes('Nivel 2')) return 'text-amber-700 bg-amber-100 border-amber-200';
+        if (nivel.includes('Nivel 3')) return 'text-red-700 bg-red-100 border-red-200';
+        if (nivel.includes('Nivel 4')) return 'text-slate-700 bg-slate-200 border-slate-300';
+        return 'text-slate-600 bg-slate-100 border-slate-200';
+      };
+
+      const getAsesorColor = (asesorName) => {
+        const found = ADVISORS.find(a => a.name === asesorName);
+        return found ? found.colorClass : 'bg-slate-100 text-slate-700';
+      };
+
+      return (
+        <div className="space-y-6 relative animate-fade-in pb-10">
+          
+          {/* MODAL CONFIRMACIÓN ELIMINAR CASO */}
+          {showDeleteModal && (
+            <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl animate-fade-in border border-slate-100">
+                <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-6 mx-auto">
+                  <Trash2 size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-center text-slate-800 mb-2">¿Eliminar este caso?</h3>
+                <p className="text-center text-slate-500 font-medium mb-8">Esta acción es permanente y se borrará de Firebase.</p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-3 px-4 font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+                    Cancelar
+                  </button>
+                  <button onClick={() => onDelete(caseData.id)} className="flex-1 py-3 px-4 font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors shadow-sm">
+                    Sí, eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL DETALLE BAJA DEFINITIVA */}
+          {showBajaModal && (
+            <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-fade-in border border-slate-100">
+                <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-6 mx-auto">
+                  <XCircle size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-center text-slate-800 mb-2">Confirmar Baja Definitiva</h3>
+                <p className="text-center text-slate-500 font-medium mb-6">Por favor, especifica el tipo y motivo final de la baja.</p>
+                
+                <div className="mb-6 text-left space-y-3">
+                  <select 
+                    className="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-red-400 outline-none text-slate-700 bg-slate-50"
+                    value={localData.tipoBaja || 'NO CONTINUA'} 
+                    onChange={e => setLocalData({...localData, tipoBaja: e.target.value})}
+                  >
+                    <option value="NO CONTINUA">NO CONTINUA</option>
+                    <option value="NO INICIA">NO INICIA</option>
+                  </select>
+
+                  <select 
+                    className="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-red-400 outline-none text-slate-700 bg-slate-50"
+                    value={localData.detalleBaja || BAJA_SUBCATEGORIES[0]} 
+                    onChange={e => setLocalData({...localData, detalleBaja: e.target.value})}
+                  >
+                    {BAJA_SUBCATEGORIES.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                  
+                  {localData.detalleBaja === 'Otro' && (
+                    <div className="animate-fade-in">
+                      <input 
+                        type="text" 
+                        placeholder="Escribe el motivo detallado..." 
+                        className="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-red-400 outline-none text-slate-700"
+                        value={localData.detalleBajaOtro || ''} 
+                        onChange={e => setLocalData({...localData, detalleBajaOtro: e.target.value})}
+                        autoFocus
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button onClick={() => setShowBajaModal(false)} className="flex-1 py-3 px-4 font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+                    Cancelar
+                  </button>
+                  <button 
+                    onClick={confirmBajaDefinitiva} 
+                    disabled={localData.detalleBaja === 'Otro' && !(localData.detalleBajaOtro || '').trim()}
+                    className="flex-1 py-3 px-4 font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors shadow-sm disabled:opacity-50"
+                  >
+                    Confirmar Baja
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* HEADER SECUNDARIO */}
+          <div className="flex flex-wrap gap-4 justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+            <button onClick={onBack} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors font-bold px-2 py-1">
+              <ArrowLeft size={18} /> Volver a la lista
+            </button>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button 
+                onClick={() => setShowDeleteModal(true)}
+                className="w-full sm:w-auto flex justify-center items-center gap-2 px-4 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
+              >
+                <Trash2 size={16} /> Borrar Caso
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Columna Izquierda: Información del Estudiante y Estado (EDITABLE INLINE) */}
+            <div className="lg:col-span-1 space-y-6">
+              
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 md:p-6 border-t-4" style={{ borderTopColor: careerInfo.hex }}>
+                <div className="flex flex-col mb-4 gap-2">
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="w-full">
+                      <input 
+                        type="text"
+                        value={localData.nombre}
+                        onChange={e => setLocalData({...localData, nombre: e.target.value})}
+                        onBlur={e => handleBlur('nombre', e.target.value)}
+                        className="text-xl md:text-2xl font-bold text-slate-800 bg-transparent w-full border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none transition-colors pb-1"
+                        placeholder="Nombre del alumno"
+                      />
+                      <input 
+                        type="text"
+                        value={localData.matricula}
+                        onChange={e => setLocalData({...localData, matricula: e.target.value})}
+                        onBlur={e => handleBlur('matricula', e.target.value)}
+                        className="text-sm font-medium text-slate-500 bg-transparent w-full border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none transition-colors"
+                        placeholder="Matrícula"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col items-start gap-2 mt-2">
+                    <StatusBadge status={caseData.estado} />
+                    {caseData.estado === 'Baja definitiva' && caseData.detalleBaja && (
+                      <span className="text-[10px] text-red-500 font-bold bg-red-50 px-2 py-1 rounded border border-red-100">
+                        {caseData.tipoBaja || 'NO CONTINUA'} - {caseData.detalleBaja}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4 mt-6">
+
+                  <div>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Asesor Asignado</p>
+                    <select 
+                      className={`w-full border rounded-lg p-2 text-sm font-bold outline-none focus:ring-2 shadow-sm ${getAsesorColor(localData.asesor)}`}
+                      value={localData.asesor || ''} 
+                      onChange={e => handleSelectChange('asesor', e.target.value)}
+                    >
+                      {ADVISORS.map(a => <option key={a.name} value={a.name}>{a.name}</option>)}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Perfil del Alumno</p>
+                    <div className="flex flex-wrap gap-2">
+                      {STUDENT_TYPES.map(tipo => {
+                        const isChecked = localData.tipoAlumno?.includes(tipo);
+                        return (
+                          <label key={tipo} className={`cursor-pointer px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded border transition-colors ${isChecked ? 'bg-indigo-100 text-indigo-700 border-indigo-300' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                            <input 
+                              type="checkbox" 
+                              className="hidden"
+                              checked={isChecked}
+                              onChange={() => {
+                                const newTipos = isChecked 
+                                  ? localData.tipoAlumno.filter(t => t !== tipo)
+                                  : [...(localData.tipoAlumno || []), tipo];
+                                setLocalData({...localData, tipoAlumno: newTipos});
+                                onUpdate({...caseData, tipoAlumno: newTipos});
+                              }}
+                            />
+                            {tipo}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Nivel de Gravedad</p>
+                    <select 
+                      className={`w-full border rounded-lg p-2 text-sm font-bold outline-none focus:ring-2 shadow-sm ${getNivelStyle(localData.nivelCaso)}`}
+                      value={localData.nivelCaso || NIVELES_CASO[0]} 
+                      onChange={e => handleSelectChange('nivelCaso', e.target.value)}
+                    >
+                      {NIVELES_CASO.map(n => <option key={n} value={n}>{n.split('—')[0].trim()}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Carrera</p>
+                    <select 
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-400"
+                      value={localData.carrera} 
+                      onChange={e => handleCareerChange(e.target.value)}
+                    >
+                      {CAREERS.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Modalidad Actual</p>
+                    <select 
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-400"
+                      value={localData.modalidad} 
+                      onChange={e => handleSelectChange('modalidad', e.target.value)}
+                    >
+                      {careerInfo.modalities.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Motivo Principal</p>
+                    <select 
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-400"
+                      value={localData.motivo} 
+                      onChange={e => handleSelectChange('motivo', e.target.value)}
+                    >
+                      {REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-2 bg-indigo-50/50 p-3 rounded-lg border border-indigo-100">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-gray-300"
+                        checked={localData.empresaAmiga}
+                        onChange={e => {
+                          const isChecked = e.target.checked;
+                          setLocalData({...localData, empresaAmiga: isChecked, nombreEmpresa: !isChecked ? '' : localData.nombreEmpresa});
+                          onUpdate({...caseData, empresaAmiga: isChecked, nombreEmpresa: !isChecked ? '' : localData.nombreEmpresa});
+                        }}
+                      />
+                      <span className="text-xs font-bold text-indigo-900">Convenio Corporativo (Empresa Amiga)</span>
+                    </label>
+                    {localData.empresaAmiga && (
+                      <input 
+                        type="text" 
+                        value={localData.nombreEmpresa} 
+                        onChange={e => setLocalData({...localData, nombreEmpresa: e.target.value})}
+                        onBlur={e => handleBlur('nombreEmpresa', e.target.value)}
+                        placeholder="Nombre de la Empresa"
+                        className="w-full bg-white border border-indigo-200 rounded-lg p-2 text-sm text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-400"
+                      />
+                    )}
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Teléfono Celular</p>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        value={localData.telefono} 
+                        onChange={e => setLocalData({...localData, telefono: e.target.value})}
+                        onBlur={e => handleBlur('telefono', e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-400"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="pt-2">
+                    <a 
+                      href={getWhatsAppUrl()} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      onClick={handleWhatsAppClick}
+                      className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white py-3 rounded-xl font-bold transition-colors shadow-sm"
+                    >
+                      <MessageCircle size={18} /> Contactar por WhatsApp
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                 <h4 className="font-bold text-slate-800 mb-4">Actualizar Estado Final</h4>
+                 
+                 <div className="mb-4">
+                   <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Subestado</label>
+                   <select 
+                     className="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-400 outline-none text-sm font-medium text-slate-700 bg-slate-50"
+                     value={caseData.subestado || SUB_STATUSES[0]}
+                     onChange={(e) => onUpdate({ ...caseData, subestado: e.target.value })}
+                   >
+                     {SUB_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                   </select>
+                 </div>
+
+                 <label className="block text-xs font-bold text-slate-500 mb-2 uppercase">Estado General</label>
+                 <div className="grid grid-cols-1 gap-2">
+                    {STATUSES.map(s => (
+                      <button 
+                        key={s}
+                        onClick={() => handleStatusClick(s)}
+                        className={`text-left px-4 py-2.5 rounded-xl border transition-all ${caseData.estado === s ? 'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold ring-1 ring-indigo-500' : 'border-slate-200 text-slate-600 font-medium hover:bg-slate-50'}`}
+                      >
+                        Marcar como: {s}
+                      </button>
+                    ))}
+                 </div>
+                 <p className="text-[10px] text-slate-400 mt-3 italic text-center leading-tight">Nota: Marcar como "Retenido" o "Baja" cerrará y enviará el caso a Casos Resueltos automáticamente.</p>
+              </div>
+
+            </div>
+
+            {/* Columna Derecha: Estrategia y NUEVO Historial de Negociación */}
+            <div className="lg:col-span-2 space-y-6 flex flex-col">
+              
+              {/* Tarjetas de Estrategia */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-shrink-0">
+                <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                  <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <Search className="text-indigo-500" size={18}/> Estrategia de Retención Calculada
+                  </h3>
+                </div>
+                
+                <div className="p-4 md:p-5 grid grid-cols-1 md:grid-cols-2 gap-5 bg-slate-50/50">
+                  
+                  {/* Estrategia Económica */}
+                  <div className={`rounded-xl border shadow-sm bg-white ${isTimeIssue && !isEconIssue ? 'border-slate-200' : 'border-emerald-200'}`}>
+                    <div className={`p-3 border-b ${isTimeIssue && !isEconIssue ? 'border-slate-100' : 'border-emerald-100 bg-emerald-50/50 rounded-t-xl'}`}>
+                      <h4 className={`text-sm font-bold flex items-center gap-1.5 ${isTimeIssue && !isEconIssue ? 'text-slate-500' : 'text-emerald-800'}`}>
+                         Oferta Económica (Semestre)
+                      </h4>
+                    </div>
+                    <div className="p-4">
+                      {isTimeIssue && !isEconIssue ? (
+                        <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                          Motivo de <strong>Tiempo/Laboral</strong> detectado. Enfoque exclusivo en Modalidades. No ofrezca economía salvo pedido explícito.
+                        </p>
+                      ) : (
+                        <div className="space-y-3">
+                          {caseData.empresaAmiga ? (
+                            <p className="text-[11px] text-emerald-700 bg-emerald-50 p-2 rounded border border-emerald-100">
+                              Alumno con <strong>20% activo (Empresa Amiga)</strong>. Ofrecer ayudas sobre cuota base:
+                            </p>
+                          ) : (
+                            <p className="text-[11px] text-emerald-700 bg-emerald-50 p-2 rounded border border-emerald-100">
+                              Alumno <strong>SIN descuentos activos</strong>. Ofrecer estas ayudas especiales:
+                            </p>
+                          )}
+                          <div className="flex justify-between items-center text-sm border-b border-slate-100 pb-1.5">
+                            <span className="font-bold text-slate-600">Oferta Inicial:</span>
+                            <span className="font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">{totalBaseDiscount}%</span>
+                          </div>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="font-bold text-slate-600">Máx. c/Comprobante:</span>
+                            <span className="font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">{totalProofDiscount}%</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Opciones de Modalidad */}
+                  <div className="bg-white rounded-xl border border-blue-200 shadow-sm overflow-hidden">
+                    <div className="p-3 border-b border-blue-100 bg-blue-50/50">
+                      <h4 className="text-sm font-bold text-blue-800 flex items-center gap-1.5">Opciones de Cambio Modalidad</h4>
+                    </div>
+                    <div className="p-4 space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                      {careerInfo.modalities.map(mod => (
+                        <div key={mod} className={`rounded-lg p-2.5 border ${caseData.modalidad === mod ? 'border-blue-400 bg-blue-50' : 'border-slate-100 bg-slate-50'}`}>
+                          <span className="font-bold text-blue-900 text-xs flex justify-between items-center mb-1">
+                            {mod} {caseData.modalidad === mod && <span className="text-[9px] bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded uppercase">Actual</span>}
+                          </span>
+                          <span className="text-[11px] text-slate-600 leading-tight block">{MODALITY_RULES[mod]}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* --- HISTORIAL (BITÁCORA) --- */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col flex-1 min-h-[400px]">
+                <div className="p-4 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50 rounded-t-2xl">
+                  <Archive size={20} className="text-slate-400" />
+                  <h3 className="font-bold text-slate-700">Bitácora de Observaciones y Negociación</h3>
+                </div>
+
+                {/* Lista Historial */}
+                <div className="flex-1 overflow-y-auto p-4 md:p-5 space-y-4 custom-scrollbar bg-slate-50/30">
+                  {interacciones.map((msg, index) => {
+                    let d;
+                    try {
+                      d = new Date(msg.fecha);
+                      if(isNaN(d.getTime())) d = new Date();
+                    } catch(e) {
+                      d = new Date();
+                    }
+                    
+                    const isIndagacion = msg.rol === 'indagacion';
+                    const isSeguimiento = msg.rol === 'seguimiento';
+                    const isCierre = msg.rol === 'cierre';
+                    const isSistema = msg.rol === 'sistema'; 
+
+                    let boxStyle = "border-slate-300 bg-white";
+                    let badgeStyle = "bg-slate-100 text-slate-600";
+                    let titleStr = "Observación General";
+
+                    if (isIndagacion) {
+                      boxStyle = "border-amber-400 bg-amber-50/30";
+                      badgeStyle = "bg-amber-100 text-amber-700";
+                      titleStr = "Indago el problema";
+                    } else if (isSeguimiento) {
+                      boxStyle = "border-indigo-400 bg-indigo-50/30";
+                      badgeStyle = "bg-indigo-100 text-indigo-700";
+                      titleStr = "Seguimiento y negociación";
+                    } else if (isCierre) {
+                      boxStyle = "border-emerald-400 bg-emerald-50/30";
+                      badgeStyle = "bg-emerald-100 text-emerald-700";
+                      titleStr = "Cierre";
+                    } else if (isSistema) {
+                      boxStyle = "border-slate-400 bg-slate-50/30";
+                      badgeStyle = "bg-slate-200 text-slate-700";
+                      titleStr = "Situación Inicial / Motivo";
+                    }
+
+                    const isEditingThis = editingMsgId === (msg.id || 'old');
+                    const isDeletingThis = deletingMsgId === (msg.id || 'old');
+                    
+                    return (
+                      <div key={msg.id || index} className={`relative p-4 rounded-xl border-l-4 shadow-sm border-y border-r ${boxStyle} animate-fade-in`}>
+                        <div className="flex flex-wrap gap-2 justify-between items-start mb-2">
+                          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${badgeStyle}`}>
+                            {titleStr}
+                          </span>
+                          <div className="flex items-center gap-2 ml-auto">
+                            <span className="text-[10px] font-bold text-slate-400">
+                              {d.toLocaleDateString()} - {d.getHours()}:{String(d.getMinutes()).padStart(2, '0')}
+                            </span>
+                            {!isEditingThis && !isDeletingThis && (
+                              <div className="flex gap-1 bg-white/50 rounded-md p-0.5 shadow-sm border border-slate-200/50">
+                                <button onClick={() => handleEditMsgStart(msg)} className="p-1 text-slate-400 hover:text-indigo-600 transition-colors rounded hover:bg-white" title="Editar observación">
+                                  <Edit2 size={12} />
+                                </button>
+                                <button onClick={() => setDeletingMsgId(msg.id || 'old')} className="p-1 text-slate-400 hover:text-red-600 transition-colors rounded hover:bg-white" title="Eliminar observación">
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {isDeletingThis ? (
+                          <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-fade-in shadow-inner">
+                            <p className="text-xs text-red-800 font-bold mb-3 flex items-center gap-1.5"><AlertCircle size={14}/> ¿Seguro que deseas eliminar este registro del historial?</p>
+                            <div className="flex gap-2 justify-end">
+                              <button onClick={() => setDeletingMsgId(null)} className="px-3 py-1.5 text-[11px] font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 shadow-sm transition-colors">Cancelar</button>
+                              <button onClick={() => handleDeleteMsgConfirm(msg.id || 'old')} className="px-3 py-1.5 text-[11px] font-bold text-white bg-red-500 rounded-lg hover:bg-red-600 shadow-sm transition-colors">Sí, eliminar</button>
+                            </div>
+                          </div>
+                        ) : isEditingThis ? (
+                          <div className="mt-2 animate-fade-in">
+                            <textarea 
+                              className="w-full bg-white border border-indigo-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 custom-scrollbar resize-none shadow-inner"
+                              rows={3}
+                              value={editingMsgText}
+                              onChange={e => setEditingMsgText(e.target.value)}
+                              autoFocus
+                            />
+                            <div className="flex justify-end gap-2 mt-2">
+                              <button onClick={handleEditMsgCancel} className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition-colors shadow-sm">Cancelar</button>
+                              <button onClick={handleEditMsgSave} disabled={!editingMsgText.trim()} className="px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm disabled:opacity-50">Guardar Cambios</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                            {msg.texto}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <div ref={historyEndRef} />
+                </div>
+
+                {/* Input Historial */}
+                <div className="p-4 md:p-5 bg-white border-t border-slate-100 rounded-b-2xl">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <select 
+                        className="border border-slate-300 text-sm rounded-lg p-2 focus:ring-2 focus:ring-indigo-400 outline-none font-bold text-slate-600 bg-slate-50 w-full sm:w-auto"
+                        value={interactionType}
+                        onChange={(e) => setInteractionType(e.target.value)}
+                      >
+                        <option value="indagacion">Indago el problema</option>
+                        <option value="seguimiento">Seguimiento y negociación</option>
+                        <option value="cierre">Cierre</option>
+                      </select>
+                      <span className="text-xs text-slate-400 italic hidden sm:inline">Selecciona la etapa.</span>
+                    </div>
+                    
+                    <textarea 
+                      rows={3}
+                      className="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none custom-scrollbar transition-all"
+                      placeholder="Redacta la observación..."
+                      value={newInteraction}
+                      onChange={(e) => setNewInteraction(e.target.value)}
+                    ></textarea>
+
+                    <div className="flex justify-end">
+                      <button 
+                        onClick={handleAddInteraction}
+                        disabled={!newInteraction.trim()}
+                        className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 shadow-sm"
+                      >
+                        <PlusCircle size={16} /> Agregar al Historial
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
 </body>
 </html>
